@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import api from '../api/axios';
+import logoUrl from '../assets/gist_logo.jpg';
 
 const demoAccounts = [
   { role: 'Super Admin', email: 'admin@hostelms.com', password: 'password123' },
@@ -65,7 +66,7 @@ const Login: React.FC = () => {
           </button>
           <div className="flex flex-col items-center justify-center">
             <img 
-              src="/docs/gist_logo.jpg" 
+              src={logoUrl} 
               alt="Geethanjali Institute of Science and Technology Logo" 
               className="h-24 w-auto object-contain"
               onError={(e) => {

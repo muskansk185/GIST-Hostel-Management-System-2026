@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LogOut, ChevronDown, ChevronRight } from 'lucide-react';
+import logoUrl from '../assets/gist_logo.jpg';
 
 export interface SidebarItem {
   label: string;
@@ -39,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ items, isCollapsed }) => {
     <div className={`flex h-screen flex-col bg-slate-900 text-white transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className="flex h-16 items-center justify-center border-b border-slate-800 px-4">
         <img 
-          src="/docs/gist_logo.jpg" 
+          src={logoUrl} 
           alt="Logo" 
           className="h-8 w-8 object-contain flex-shrink-0 rounded-full bg-white"
           onError={(e) => {
