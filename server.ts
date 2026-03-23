@@ -3,6 +3,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { connectDB } from './server/config/db';
 import authRoutes from './server/routes/auth.routes';
 import studentRoutes from './server/routes/student.routes';
@@ -19,6 +20,9 @@ import hodRoutes from './server/routes/hod.routes';
 import alertRoutes from './server/routes/alert.routes';
 import noticeRoutes from './server/routes/notice.routes';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -29,7 +33,7 @@ async function startServer() {
   // Middlewares
   app.use(cors());
   app.use(express.json());
-  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
   // API Routes
   app.use('/api/v1/auth', authRoutes);
@@ -59,7 +63,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
