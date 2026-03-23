@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { LogOut, ChevronDown, ChevronRight } from 'lucide-react';
+import { LogOut, ChevronDown, ChevronRight, GraduationCap } from 'lucide-react';
 
 export interface SidebarItem {
   label: string;
@@ -38,14 +38,9 @@ const Sidebar: React.FC<SidebarProps> = ({ items, isCollapsed }) => {
   return (
     <div className={`flex h-screen flex-col bg-slate-900 text-white transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className="flex h-16 items-center justify-center border-b border-slate-800 px-4">
-        <img 
-          src="https://gist.edu.in/gist/wp-content/uploads/2016/05/GISTLogo_Final.jpg" 
-          alt="Logo" 
-          className="h-8 w-8 object-contain flex-shrink-0 rounded-full bg-white"
-          onError={(e) => {
-            e.currentTarget.src = "https://placehold.co/200x200/ea580c/ffffff?text=Logo";
-          }}
-        />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-lg flex-shrink-0">
+          <GraduationCap size={24} />
+        </div>
         {!isCollapsed && <span className="ml-3 text-xl font-bold tracking-tight truncate">GIST</span>}
       </div>
       

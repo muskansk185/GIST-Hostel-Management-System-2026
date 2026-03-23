@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import api from '../api/axios';
+import { GraduationCap, ArrowLeft } from 'lucide-react';
 
 const demoAccounts = [
   { role: 'Super Admin', email: 'admin@hostelms.com', password: 'password123' },
@@ -59,19 +60,14 @@ const Login: React.FC = () => {
         <div>
           <button
             onClick={() => navigate("/")}
-            className="text-sm text-indigo-600 hover:text-indigo-800 mb-4 flex items-center"
+            className="text-sm text-indigo-600 hover:text-indigo-800 mb-4 flex items-center gap-1"
           >
-            ← Back to Home
+            <ArrowLeft size={16} /> Back to Home
           </button>
           <div className="flex flex-col items-center justify-center">
-            <img 
-              src="https://gist.edu.in/gist/wp-content/uploads/2016/05/GISTLogo_Final.jpg" 
-              alt="Geethanjali Institute of Science and Technology Logo" 
-              className="h-24 w-auto object-contain"
-              onError={(e) => {
-                e.currentTarget.src = "https://placehold.co/200x200/ea580c/ffffff?text=Logo";
-              }}
-            />
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl mb-4">
+              <GraduationCap size={40} />
+            </div>
             <h1 className="mt-4 text-center text-xl font-bold text-slate-900">
               Geethanjali Institute of Science and Technology
             </h1>

@@ -11,7 +11,8 @@ import {
   MapPin,
   ArrowRight,
   Utensils,
-  BookOpen
+  BookOpen,
+  GraduationCap
 } from 'lucide-react';
 
 const Home: React.FC = () => {
@@ -20,14 +21,9 @@ const Home: React.FC = () => {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md sm:px-12">
         <div className="flex items-center gap-3">
-          <img 
-            src="https://gist.edu.in/gist/wp-content/uploads/2016/05/GISTLogo_Final.jpg" 
-            alt="Geethanjali Institute of Science and Technology Logo" 
-            className="h-12 w-auto object-contain"
-            onError={(e) => {
-              e.currentTarget.src = "https://placehold.co/200x200/ea580c/ffffff?text=Logo";
-            }}
-          />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-lg">
+            <GraduationCap size={24} />
+          </div>
           <span className="hidden sm:block text-lg font-bold tracking-tight text-slate-900">
             Geethanjali Institute of Science and Technology
           </span>

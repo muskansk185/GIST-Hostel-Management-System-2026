@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Building2, Mail, Lock, User, Phone, BookOpen, Calendar, Users } from 'lucide-react';
+import { Building2, Mail, Lock, User, Phone, BookOpen, Calendar, Users, GraduationCap } from 'lucide-react';
 import api from '../../api/axios';
 
 const Register = () => {
@@ -55,14 +55,9 @@ const Register = () => {
     >
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl bg-white/95 backdrop-blur-sm p-8 rounded-xl shadow-2xl mt-8 mb-8">
         <div className="flex flex-col items-center justify-center">
-          <img 
-            src="https://gist.edu.in/gist/wp-content/uploads/2016/05/GISTLogo_Final.jpg" 
-            alt="Geethanjali Institute of Science and Technology Logo" 
-            className="h-24 w-auto object-contain"
-            onError={(e) => {
-              e.currentTarget.src = "https://placehold.co/200x200/ea580c/ffffff?text=Logo";
-            }}
-          />
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl mb-4">
+            <GraduationCap size={40} />
+          </div>
           <h1 className="mt-4 text-center text-xl font-bold text-slate-900">
             Geethanjali Institute of Science and Technology
           </h1>
