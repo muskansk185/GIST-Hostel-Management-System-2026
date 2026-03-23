@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logoUrl from '../assets/gist_logo.jpg';
 import { 
   Wifi, 
   ShieldCheck, 
@@ -22,7 +21,7 @@ const Home: React.FC = () => {
       <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md sm:px-12">
         <div className="flex items-center gap-3">
           <img 
-            src={logoUrl} 
+            src="https://gist.edu.in/gist/wp-content/uploads/2016/05/GISTLogo_Final.jpg" 
             alt="Geethanjali Institute of Science and Technology Logo" 
             className="h-12 w-auto object-contain"
             onError={(e) => {

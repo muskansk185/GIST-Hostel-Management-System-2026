@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import api from '../api/axios';
-import logoUrl from '../assets/gist_logo.jpg';
 
 const demoAccounts = [
   { role: 'Super Admin', email: 'admin@hostelms.com', password: 'password123' },
@@ -66,7 +65,7 @@ const Login: React.FC = () => {
           </button>
           <div className="flex flex-col items-center justify-center">
             <img 
-              src={logoUrl} 
+              src="https://gist.edu.in/gist/wp-content/uploads/2016/05/GISTLogo_Final.jpg" 
               alt="Geethanjali Institute of Science and Technology Logo" 
               className="h-24 w-auto object-contain"
               onError={(e) => {
