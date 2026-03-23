@@ -137,7 +137,7 @@ export const getRevenue = async (req: AuthRequest, res: Response) => {
       const students = await Student.find({ hostelId: req.user.hostelId }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     } else if (req.user?.role === "HOD" && req.user.department) {
-      const students = await Student.find({ department: req.user.department }).select('_id');
+      const students = await Student.find({ 'personalDetails.department': req.user.department }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     }
 
@@ -195,7 +195,7 @@ export const getAllFees = async (req: AuthRequest, res: Response) => {
       const students = await Student.find({ hostelId: req.user.hostelId }).select('_id');
       filter.studentId = { $in: students.map(s => s._id) };
     } else if (req.user?.role === "HOD" && req.user.department) {
-      const students = await Student.find({ department: req.user.department }).select('_id');
+      const students = await Student.find({ 'personalDetails.department': req.user.department }).select('_id');
       filter.studentId = { $in: students.map(s => s._id) };
     } else if (req.user?.role === "STUDENT") {
       const student = await Student.findOne({ userId: req.user.userId }).select('_id');
@@ -342,7 +342,7 @@ export const getPaymentHistory = async (req: AuthRequest, res: Response) => {
     } else if (dbUser.role === UserRole.PARENT) {
       query.studentId = { $in: dbUser.studentIds };
     } else if (dbUser.role === UserRole.HOD) {
-      const students = await Student.find({ department: dbUser.department }).select('_id');
+      const students = await Student.find({ 'personalDetails.department': dbUser.department }).select('_id');
       query.studentId = { $in: students.map(s => s._id) };
     } else if (dbUser.role === UserRole.WARDEN) {
       const students = await Student.find({ hostelId: dbUser.hostelId }).select('_id');

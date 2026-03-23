@@ -8,6 +8,7 @@ const FeeStatus: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [fees, setFees] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [student, setStudent] = useState<any>(null);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -18,6 +19,8 @@ const FeeStatus: React.FC = () => {
         setLoading(true);
         const studentRes = await api.get('/students/linked-student');
         const studentData = studentRes.data.student;
+        const allStudents = studentRes.data.students || [studentData];
+        setStudents(allStudents);
         setStudent(studentData);
 
         if (studentData) {
@@ -39,6 +42,22 @@ const FeeStatus: React.FC = () => {
       fetchFeeData();
     }
   }, [user]);
+
+  const handleStudentChange = async (studentId: string) => {
+    const selected = students.find(s => s._id === studentId);
+    if (selected) {
+      setStudent(selected);
+      setLoading(true);
+      try {
+        const feeRes = await api.get(`/fees/student/${selected._id}`);
+        setFees(feeRes.data);
+      } catch (err) {
+        setError('Failed to load fee status for selected student.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -130,11 +149,25 @@ const FeeStatus: React.FC = () => {
         </div>
       )}
 
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Fee Status & Payments</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Monitor and pay fees for {student ? `${student.firstName} ${student.lastName}` : 'your child'}.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Fee Status & Payments</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Monitor and pay fees for {student ? `${student.personalDetails?.firstName} ${student.personalDetails?.lastName}` : 'your child'}.
+          </p>
+        </div>
+        
+        {students.length > 1 && (
+          <select 
+            className="block w-full sm:w-64 rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            value={student?._id || ''}
+            onChange={(e) => handleStudentChange(e.target.value)}
+          >
+            {students.map(s => (
+              <option key={s._id} value={s._id}>{s.personalDetails?.firstName} {s.personalDetails?.lastName} ({s.personalDetails?.rollNumber})</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Summary Cards */}

@@ -408,7 +408,17 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700">Department</label>
-                <input required name="department" type="text" className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+                <select required name="department" className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                  <option value="">Select Department</option>
+                  <option value="CSE">Computer Science and Engineering (CSE)</option>
+                  <option value="ISE">Information Science and Engineering (ISE)</option>
+                  <option value="ECE">Electronics and Communication Engineering (ECE)</option>
+                  <option value="EEE">Electrical and Electronics Engineering (EEE)</option>
+                  <option value="MECH">Mechanical Engineering (MECH)</option>
+                  <option value="CIVIL">Civil Engineering (CIVIL)</option>
+                  <option value="AIML">Artificial Intelligence and Machine Learning (AIML)</option>
+                  <option value="AIDS">Artificial Intelligence and Data Science (AIDS)</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700">Year</label>

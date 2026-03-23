@@ -51,18 +51,32 @@ const Login: React.FC = () => {
   };
 
   return (
-    
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12 sm:px-6 lg:px-8">
-      
-      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-10 shadow-md">
+    <div 
+      className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12 sm:px-6 lg:px-8 bg-cover bg-center"
+      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')" }}
+    >
+      <div className="w-full max-w-md space-y-8 rounded-xl bg-white/95 backdrop-blur-sm p-10 shadow-2xl">
         <div>
-        <button
-          onClick={() => navigate("/")}
-          className="text-sm text-indigo-600 hover:text-indigo-800 mb-4 flex items-center"
-        >
-          ← Back to Home
-        </button>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-slate-900">
+          <button
+            onClick={() => navigate("/")}
+            className="text-sm text-indigo-600 hover:text-indigo-800 mb-4 flex items-center"
+          >
+            ← Back to Home
+          </button>
+          <div className="flex flex-col items-center justify-center">
+            <img 
+              src="/docs/gist_logo.jpg" 
+              alt="Geethanjali Institute of Science and Technology Logo" 
+              className="h-24 w-auto object-contain"
+              onError={(e) => {
+                e.currentTarget.src = "https://placehold.co/200x200/ea580c/ffffff?text=Logo";
+              }}
+            />
+            <h1 className="mt-4 text-center text-xl font-bold text-slate-900">
+              Geethanjali Institute of Science and Technology
+            </h1>
+          </div>
+          <h2 className="mt-6 text-center text-2xl font-semibold tracking-tight text-slate-700">
             Sign in to your account
           </h2>
         </div>

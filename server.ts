@@ -21,8 +21,7 @@ import noticeRoutes from './server/routes/notice.routes';
 
 async function startServer() {
   const app = express();
-  // const PORT = 3000;
-  const PORT = process.env.PORT || 5000;
+  const PORT = 3000;
 
   // Connect to Database
   await connectDB();
@@ -59,18 +58,13 @@ async function startServer() {
       appType: 'spa',
     });
     app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
   }
-
-  // Production: Serve React build
-if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(process.cwd(), 'dist');
-
-  app.use(express.static(distPath));
-
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);

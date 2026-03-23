@@ -37,7 +37,7 @@ export const getSystemStats = async (req: AuthRequest, res: Response) => {
       
       bedQuery.roomId = { $in: roomIds };
     } else if (req.user?.role === "HOD" && req.user.department) {
-      studentQuery.department = req.user.department;
+      studentQuery['personalDetails.department'] = req.user.department;
     }
 
     const totalHostels = await Hostel.countDocuments(hostelQuery);
@@ -132,7 +132,7 @@ export const getRevenueStats = async (req: AuthRequest, res: Response) => {
       const students = await Student.find({ hostelId: req.user.hostelId }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     } else if (req.user?.role === "HOD" && req.user.department) {
-      const students = await Student.find({ department: req.user.department }).select('_id');
+      const students = await Student.find({ 'personalDetails.department': req.user.department }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     }
 
@@ -175,7 +175,7 @@ export const getComplaintStats = async (req: AuthRequest, res: Response) => {
       const students = await Student.find({ hostelId: req.user.hostelId }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     } else if (req.user?.role === "HOD" && req.user.department) {
-      const students = await Student.find({ department: req.user.department }).select('_id');
+      const students = await Student.find({ 'personalDetails.department': req.user.department }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     }
 
@@ -282,7 +282,7 @@ export const getComplaintAnalytics = async (req: AuthRequest, res: Response) => 
       const students = await Student.find({ hostelId: req.user.hostelId }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     } else if (req.user?.role === "HOD" && req.user.department) {
-      const students = await Student.find({ department: req.user.department }).select('_id');
+      const students = await Student.find({ 'personalDetails.department': req.user.department }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     }
 
@@ -359,7 +359,7 @@ export const getFeeAnalytics = async (req: AuthRequest, res: Response) => {
       const students = await Student.find({ hostelId: req.user.hostelId }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     } else if (req.user?.role === "HOD" && req.user.department) {
-      const students = await Student.find({ department: req.user.department }).select('_id');
+      const students = await Student.find({ 'personalDetails.department': req.user.department }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     }
 
@@ -426,7 +426,7 @@ export const getLeaveAnalytics = async (req: AuthRequest, res: Response) => {
       const students = await Student.find({ hostelId: req.user.hostelId }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     } else if (req.user?.role === "HOD" && req.user.department) {
-      const students = await Student.find({ department: req.user.department }).select('_id');
+      const students = await Student.find({ 'personalDetails.department': req.user.department }).select('_id');
       matchStage.studentId = { $in: students.map(s => s._id) };
     }
 
@@ -475,14 +475,14 @@ export const getStudentDistribution = async (req: AuthRequest, res: Response) =>
     if (req.user?.role === "WARDEN" && req.user.hostelId) {
       matchStage.hostelId = req.user.hostelId;
     } else if (req.user?.role === "HOD" && req.user.department) {
-      matchStage.department = req.user.department;
+      matchStage['personalDetails.department'] = req.user.department;
     }
 
     const departmentStats = await Student.aggregate([
       { $match: matchStage },
       {
         $group: {
-          _id: '$department',
+          _id: '$personalDetails.department',
           count: { $sum: 1 }
         }
       },
@@ -492,7 +492,7 @@ export const getStudentDistribution = async (req: AuthRequest, res: Response) =>
     ]);
 
     const studentCountByDepartment = departmentStats.map(stat => ({
-      department: stat._id,
+      department: stat._id || 'Unknown',
       count: stat.count
     }));
 

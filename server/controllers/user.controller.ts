@@ -44,8 +44,8 @@ export const createUser = async (req: Request, res: Response) => {
       passwordHash,
       role,
       phone,
-      hostelId,
-      department,
+      hostelId: hostelId === "" ? undefined : hostelId,
+      department: department === "" ? undefined : department,
       studentIds: role === 'PARENT' ? studentIds : undefined,
       isActive: true
     });
@@ -73,9 +73,13 @@ export const createUser = async (req: Request, res: Response) => {
           ...personalDetails,
           firstName: personalDetails.firstName || firstName,
           lastName: personalDetails.lastName || lastName,
-          email: personalDetails.email || email
+          email: personalDetails.email || email,
+          phone: personalDetails.phone || phone || 'N/A'
         },
-        parentDetails,
+        parentDetails: {
+          ...parentDetails,
+          parentEmail: parentDetails.parentEmail || 'N/A'
+        },
         guardianDetails,
         address
       });

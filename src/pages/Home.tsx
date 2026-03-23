@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Building2, 
   Wifi, 
   ShieldCheck, 
   Coffee, 
@@ -20,9 +19,21 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md sm:px-12">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-8 w-8 text-indigo-600" />
-          <span className="text-xl font-bold tracking-tight text-slate-900">HostelMS</span>
+        <div className="flex items-center gap-3">
+          <img 
+            src="/docs/gist_logo.jpg" 
+            alt="Geethanjali Institute of Science and Technology Logo" 
+            className="h-12 w-auto object-contain"
+            onError={(e) => {
+              e.currentTarget.src = "https://placehold.co/200x200/ea580c/ffffff?text=Logo";
+            }}
+          />
+          <span className="hidden sm:block text-lg font-bold tracking-tight text-slate-900">
+            Geethanjali Institute of Science and Technology
+          </span>
+          <span className="sm:hidden text-lg font-bold tracking-tight text-slate-900">
+            GIST
+          </span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           <Link to="/" className="text-sm font-medium text-slate-700 hover:text-indigo-600">Home</Link>
@@ -339,7 +350,7 @@ const Home: React.FC = () => {
       {/* Footer */}
       <footer className="bg-white py-8 text-center border-t border-slate-200">
         <p className="text-sm text-slate-500">
-          © {new Date().getFullYear()} HostelMS. All rights reserved.
+          © {new Date().getFullYear()} Geethanjali Institute of Science and Technology. All rights reserved.
         </p>
       </footer>
     </div>

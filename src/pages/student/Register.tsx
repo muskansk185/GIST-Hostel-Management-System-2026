@@ -49,14 +49,25 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-2xl">
-        <div className="flex justify-center">
-          <div className="h-12 w-12 bg-indigo-600 rounded-xl flex items-center justify-center">
-            <Building2 className="h-8 w-8 text-white" />
-          </div>
+    <div 
+      className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-cover bg-center"
+      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')" }}
+    >
+      <div className="sm:mx-auto sm:w-full sm:max-w-2xl bg-white/95 backdrop-blur-sm p-8 rounded-xl shadow-2xl mt-8 mb-8">
+        <div className="flex flex-col items-center justify-center">
+          <img 
+            src="/docs/gist_logo.jpg" 
+            alt="Geethanjali Institute of Science and Technology Logo" 
+            className="h-24 w-auto object-contain"
+            onError={(e) => {
+              e.currentTarget.src = "https://placehold.co/200x200/ea580c/ffffff?text=Logo";
+            }}
+          />
+          <h1 className="mt-4 text-center text-xl font-bold text-slate-900">
+            Geethanjali Institute of Science and Technology
+          </h1>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-slate-900">
+        <h2 className="mt-6 text-center text-2xl font-semibold tracking-tight text-slate-700">
           Student Registration
         </h2>
         <p className="mt-2 text-center text-sm text-slate-600">
@@ -65,10 +76,8 @@ const Register = () => {
             Sign in
           </Link>
         </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="mt-8">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
@@ -155,15 +164,23 @@ const Register = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Building2 className="h-5 w-5 text-slate-400" />
                   </div>
-                  <input
-                    type="text"
+                  <select
                     name="department"
                     required
                     value={formData.department}
                     onChange={handleChange}
-                    className="block w-full pl-10 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3 border"
-                    placeholder="Computer Science"
-                  />
+                    className="block w-full pl-10 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3 border bg-white"
+                  >
+                    <option value="">Select Department</option>
+                    <option value="CSE">Computer Science and Engineering (CSE)</option>
+                    <option value="ISE">Information Science and Engineering (ISE)</option>
+                    <option value="ECE">Electronics and Communication Engineering (ECE)</option>
+                    <option value="EEE">Electrical and Electronics Engineering (EEE)</option>
+                    <option value="MECH">Mechanical Engineering (MECH)</option>
+                    <option value="CIVIL">Civil Engineering (CIVIL)</option>
+                    <option value="AIML">Artificial Intelligence and Machine Learning (AIML)</option>
+                    <option value="AIDS">Artificial Intelligence and Data Science (AIDS)</option>
+                  </select>
                 </div>
               </div>
 
