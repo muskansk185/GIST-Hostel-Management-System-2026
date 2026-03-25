@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const createFeeSchema = z.object({
   body: z.object({
     studentId: z.string().optional(),
-    hostelId: z.string().optional(),
+    hostelId: z.union([z.string(), z.array(z.string())]).optional(),
     feeName: z.string().optional(),
     amount: z.number().positive('Amount must be positive'),
     dueDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid dueDate' })

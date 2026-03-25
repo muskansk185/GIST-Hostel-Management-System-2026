@@ -141,10 +141,13 @@ const AdminDashboard: React.FC = () => {
   const handleCreateFee = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const hostelSelect = e.currentTarget.elements.namedItem('hostelId') as HTMLSelectElement;
+    const selectedHostelIds = Array.from(hostelSelect.selectedOptions).map(option => option.value);
+
     const data = {
       feeName: formData.get('feeName'),
       amount: Number(formData.get('amount')),
-      hostelId: formData.get('hostelId'),
+      hostelId: selectedHostelIds,
       dueDate: formData.get('dueDate')
     };
 
@@ -171,7 +174,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
   };
 
   return (
@@ -259,7 +262,7 @@ const AdminDashboard: React.FC = () => {
                 <BarChart data={revenueData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `₹${value}`} />
                   <Tooltip 
                     cursor={{ fill: '#f8fafc' }}
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
@@ -476,13 +479,18 @@ const AdminDashboard: React.FC = () => {
                 <input required name="amount" type="number" min="1" className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Applicable Hostel</label>
-                <select required name="hostelId" className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                  <option value="">Select Hostel</option>
+                <label className="block text-sm font-medium text-slate-700">Applicable Hostels (Select one or more)</label>
+                <select 
+                  required 
+                  multiple 
+                  name="hostelId" 
+                  className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm min-h-[100px]"
+                >
                   {hostels.map(h => (
                     <option key={h?._id} value={h?._id}>{h?.name || 'Unknown'}</option>
                   ))}
                 </select>
+                <p className="mt-1 text-xs text-slate-500">Hold Ctrl (Cmd on Mac) to select multiple hostels.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700">Due Date</label>

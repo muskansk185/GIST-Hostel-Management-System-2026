@@ -14,13 +14,13 @@ export const createFee = async (req: Request, res: Response) => {
     const { studentId, hostelId, feeName, amount, dueDate } = req.body;
 
     if (hostelId) {
-      // Find all students in this hostel
-      // We can find students who have an active accommodation in this hostel
-      // Or just students who have hostelId set
-      const students = await Student.find({ hostelId });
+      const hostelIds = Array.isArray(hostelId) ? hostelId : [hostelId];
+      
+      // Find all students in these hostels
+      const students = await Student.find({ hostelId: { $in: hostelIds } });
       
       if (students.length === 0) {
-        return res.status(404).json({ message: 'No students found in this hostel' });
+        return res.status(404).json({ message: 'No students found in the selected hostels' });
       }
 
       const fees = students.map(student => ({
@@ -42,7 +42,7 @@ export const createFee = async (req: Request, res: Response) => {
       }));
       await Alert.insertMany(alerts);
 
-      return res.status(201).json({ message: `Fee records created successfully for ${students.length} students` });
+      return res.status(201).json({ message: `Fee records created successfully for ${students.length} students across ${hostelIds.length} hostels` });
     } else if (studentId) {
       const student = await Student.findById(studentId);
       if (!student) {

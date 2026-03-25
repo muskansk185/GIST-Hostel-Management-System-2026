@@ -71,6 +71,15 @@ router.get(
   getLinkedStudent
 );
 
+// Link parent to student
+router.post(
+  '/link-parent',
+  authenticateJWT,
+  authorizeRoles(UserRole.PARENT),
+  validateRequest(linkParentSchema),
+  linkParent
+);
+
 // Get student by ID
 router.get(
   '/:id',

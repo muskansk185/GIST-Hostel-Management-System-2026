@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User, { UserRole } from '../models/User';
+import Student from '../models/Student';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -25,10 +27,27 @@ export const register = async (req: Request, res: Response) => {
     const newUser = new User({ 
       email, 
       passwordHash, 
-      role: role || UserRole.STUDENT 
+      role: role || UserRole.STUDENT,
+      name: req.body.name || email.split('@')[0]
     });
     
+    // If user is a parent, find students with this parent email and link them
+    if (newUser.role === UserRole.PARENT) {
+      const students = await Student.find({ 'parentDetails.parentEmail': email });
+      if (students.length > 0) {
+        newUser.studentIds = students.map(s => s._id as mongoose.Types.ObjectId);
+      }
+    }
+    
     await newUser.save();
+
+    // If students were linked, update the students with parentId
+    if (newUser.role === UserRole.PARENT && newUser.studentIds && newUser.studentIds.length > 0) {
+      await Student.updateMany(
+        { _id: { $in: newUser.studentIds } },
+        { parentId: newUser._id }
+      );
+    }
 
     res.status(201).json({ 
       message: 'User registered successfully', 

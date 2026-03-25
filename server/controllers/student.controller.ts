@@ -54,11 +54,12 @@
       const firstName = name.split(' ')[0];
       const lastName = name.split(' ').slice(1).join(' ') || 'Unknown';
 
+      // Check if parent already exists with this email
+      const existingParent = await User.findOne({ email: parentEmail, role: UserRole.PARENT });
+
       const newStudent = new Student({
         userId: newUser._id,
-
-        rollNumber: rollNumber,
-        email: email,
+        parentId: existingParent ? existingParent._id : undefined,
         personalDetails: {
           rollNumber,
           firstName,
@@ -86,6 +87,13 @@
         }
       });
       await newStudent.save();
+
+      // If parent exists, update their studentIds
+      if (existingParent) {
+        await User.findByIdAndUpdate(existingParent._id, {
+          $addToSet: { studentIds: newStudent._id }
+        });
+      }
 
       res.status(201).json({ message: 'Student registered successfully' });
     } catch (error) {
@@ -370,7 +378,12 @@
   // Get linked students for parent
   export const getLinkedStudent = async (req: AuthRequest, res: Response) => {
     try {
-      const studentIds = req.user?.studentIds || [];
+      const parentId = req.user?.userId;
+      
+      // Fetch fresh user data to get the latest studentIds
+      const user = await User.findById(parentId);
+      const studentIds = user?.studentIds || [];
+      
       console.log('Fetching linked students for studentIds:', studentIds);
       // For backward compatibility, return the first student as 'student', and all as 'students'
       const students = await Student.find({ _id: { $in: studentIds } });
