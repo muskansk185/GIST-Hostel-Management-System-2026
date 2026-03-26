@@ -35,16 +35,14 @@ const ParentDashboard: React.FC = () => {
         const [accRes, feeRes, leaveRes, compRes] = await Promise.allSettled([
           api.get(`/accommodation/student/${currentStudent._id}`),
           api.get(`/fees/student/${currentStudent._id}`),
-          api.get(`/leaves/history?studentId=${currentStudent._id}&status=PENDING`),
+          api.get(`/leaves/parent/pending?studentId=${currentStudent._id}`),
           api.get(`/complaints/student/${currentStudent._id}`)
         ]);
 
         if (accRes.status === 'fulfilled') setAccommodation(accRes.value.data);
         if (feeRes.status === 'fulfilled') setFeeStatus(feeRes.value.data);
         if (leaveRes.status === 'fulfilled') {
-          // Filter pending leaves if the API returns all history
-          const leaves = leaveRes.value.data;
-          setPendingLeaves(Array.isArray(leaves) ? leaves.filter((l: any) => l.status === 'PENDING') : []);
+          setPendingLeaves(leaveRes.value.data);
         }
         if (compRes.status === 'fulfilled') setRecentComplaints(compRes.value.data.slice(0, 3));
       }

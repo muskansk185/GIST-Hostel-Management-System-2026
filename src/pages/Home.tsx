@@ -321,8 +321,8 @@ const Home: React.FC = () => {
               <div className="rounded-2xl bg-white/10 p-6 backdrop-blur-sm ring-1 ring-white/20">
                 <Phone className="mb-4 h-6 w-6 text-indigo-300" />
                 <h3 className="font-semibold text-white">Chief Warden Office</h3>
-                <p className="mt-2 text-sm text-indigo-200">+1 (555) 123-4567</p>
-                <p className="text-sm text-indigo-200">Ext: 401</p>
+                <p className="mt-2 text-sm text-indigo-200">Prof. U. Penchalaiah</p>
+                <p className="text-sm text-indigo-200">+91 8015656228</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-6 backdrop-blur-sm ring-1 ring-white/20">
                 <Mail className="mb-4 h-6 w-6 text-indigo-300" />
@@ -334,8 +334,7 @@ const Home: React.FC = () => {
                 <MapPin className="mb-4 h-6 w-6 text-indigo-300" />
                 <h3 className="font-semibold text-white">Campus Address</h3>
                 <p className="mt-2 text-sm text-indigo-200">
-                  Hostel Administration Block, University Campus,<br />
-                  123 Education Boulevard, Tech City, TC 12345
+                  3rd Mile, Nellore-Bombay Highway, Gangavaram (V), Kovur (M),<br /> S.P.S.R Nellore Dt., Andhra Pradesh, India – 524 137
                 </p>
               </div>
             </div>

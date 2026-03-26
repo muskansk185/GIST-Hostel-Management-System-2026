@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Users, Calendar, Building, MessageSquare, AlertCircle, Check, X, CheckCircle2, XCircle } from 'lucide-react';
 import api from '../../api/axios';
 import NoticeBoard from '../../components/NoticeBoard';
+import { getFullDepartmentName } from '../../constants/departments';
 
 const StatCard = ({ title, value, icon, subtitle, loading }: any) => (
   <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -115,7 +116,7 @@ const HodDashboard: React.FC = () => {
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">HOD Dashboard</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{user?.department ? `${getFullDepartmentName(user.department)} HOD Dashboard` : 'HOD Dashboard'}</h1>
         <p className="mt-1 text-sm text-slate-500">Welcome back, {user?.name || user?.email}. Here's your department overview.</p>
       </div>
 
@@ -175,12 +176,23 @@ const HodDashboard: React.FC = () => {
                 {leaves.slice(0, 5).map((leave) => (
                   <tr key={leave._id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-slate-900">
-                        {leave.studentId?.firstName} {leave.studentId?.lastName}
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold overflow-hidden">
+                          {leave.student?.profilePicture ? (
+                            <img src={leave.student.profilePicture} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            `${(leave.student?.personalDetails?.firstName || 'S').charAt(0)}`
+                          )}
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-slate-900">
+                            {leave.student?.personalDetails?.firstName} {leave.student?.personalDetails?.lastName}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {leave.studentId?.rollNumber || leave.rollNumber}
+                      {leave.student?.personalDetails?.rollNumber || leave.rollNumber}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatDate(leave.fromDate)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{formatDate(leave.toDate)}</td>

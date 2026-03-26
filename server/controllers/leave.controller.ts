@@ -98,12 +98,23 @@ export const getStudentLeaves = async (req: Request, res: Response) => {
 // Parent APIs
 export const getPendingParentLeaves = async (req: AuthRequest, res: Response) => {
   try {
+    const { studentId } = req.query;
     const studentIds = req.user?.studentIds || [];
 
-    const leaves = await LeaveRequest.find({
-      studentId: { $in: studentIds },
+    const filter: any = {
       status: LeaveStatus.PENDING_PARENT
-    }).populate('studentId', 'personalDetails.firstName personalDetails.lastName personalDetails.rollNumber personalDetails.department');
+    };
+
+    if (studentId) {
+      if (!studentIds.map(id => id.toString()).includes(studentId.toString())) {
+        return res.status(403).json({ message: 'Unauthorized to view this student\'s leaves' });
+      }
+      filter.studentId = studentId;
+    } else {
+      filter.studentId = { $in: studentIds };
+    }
+
+    const leaves = await LeaveRequest.find(filter).populate('studentId', 'personalDetails.firstName personalDetails.lastName personalDetails.rollNumber personalDetails.department');
 
     const formattedLeaves = leaves.map(l => ({
       ...l.toObject(),
@@ -226,11 +237,12 @@ export const getPendingHODLeaves = async (req: AuthRequest, res: Response) => {
       filter.studentId = { $in: students.map(s => s._id) };
     }
 
-    const leaves = await LeaveRequest.find(filter).populate('studentId', 'personalDetails.firstName personalDetails.lastName personalDetails.rollNumber personalDetails.department');
+    const leaves = await LeaveRequest.find(filter).populate('studentId', 'personalDetails.firstName personalDetails.lastName personalDetails.rollNumber personalDetails.department profilePicture');
 
     const formattedLeaves = leaves.map(l => ({
       ...l.toObject(),
       student: l.studentId ? {
+        profilePicture: (l.studentId as any).profilePicture,
         personalDetails: {
           firstName: (l.studentId as any).personalDetails?.firstName || '',
           lastName: (l.studentId as any).personalDetails?.lastName || '',
@@ -462,13 +474,26 @@ export const getLeaveHistory = async (req: AuthRequest, res: Response) => {
     const dbUser = await User.findById(user.userId);
     if (!dbUser) return res.status(404).json({ message: 'User not found' });
 
+    const { status, studentId } = req.query;
     let query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
 
     if (dbUser.role === UserRole.STUDENT) {
       const student = await Student.findOne({ userId: dbUser._id });
       query.studentId = student?._id;
     } else if (dbUser.role === UserRole.PARENT) {
-      query.studentId = { $in: dbUser.studentIds };
+      if (studentId) {
+        // Verify parent has access to this student
+        if (!dbUser.studentIds.map(id => id.toString()).includes(studentId.toString())) {
+          return res.status(403).json({ message: 'Unauthorized to view this student\'s leaves' });
+        }
+        query.studentId = studentId;
+      } else {
+        query.studentId = { $in: dbUser.studentIds };
+      }
     } else if (dbUser.role === UserRole.HOD) {
       const students = await Student.find({ "personalDetails.department": dbUser.department }).select('_id');
       query.studentId = { $in: students.map(s => s._id) };

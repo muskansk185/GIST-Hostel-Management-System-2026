@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api/axios';
 import { Calendar, AlertCircle, Check, X, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { getFullDepartmentName } from '../../constants/departments';
 
 const LeaveApprovals: React.FC = () => {
   const { user } = useAuth();
@@ -81,7 +82,9 @@ const LeaveApprovals: React.FC = () => {
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Leave Approvals</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {user?.department ? `${getFullDepartmentName(user.department)} Leave Approvals` : 'Leave Approvals'}
+        </h1>
         <p className="mt-1 text-sm text-slate-500">Review and manage student leave requests for your department.</p>
       </div>
 
@@ -140,10 +143,21 @@ const LeaveApprovals: React.FC = () => {
                 leaves.map((leave) => (
                   <tr key={leave._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-slate-900">
-                        {leave.student?.personalDetails?.firstName} {leave.student?.personalDetails?.lastName}
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold overflow-hidden">
+                          {leave.student?.profilePicture ? (
+                            <img src={leave.student.profilePicture} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            `${(leave.student?.personalDetails?.firstName || 'S').charAt(0)}`
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-slate-900">
+                            {leave.student?.personalDetails?.firstName} {leave.student?.personalDetails?.lastName}
+                          </div>
+                          <div className="text-xs text-slate-500">{leave.student?.personalDetails?.rollNumber || leave.rollNumber}</div>
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-500">{leave.student?.personalDetails?.rollNumber || leave.rollNumber}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">

@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Search, Users, AlertCircle, Building, CreditCard, Eye } from 'lucide-react';
 import api from '../../api/axios';
 import StudentDetailModal from '../../components/StudentDetailModal';
+import { useAuth } from '../../hooks/useAuth';
+import { getFullDepartmentName } from '../../constants/departments';
 
 const DepartmentStudents: React.FC = () => {
+  const { user } = useAuth();
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,7 +54,9 @@ const DepartmentStudents: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Department Students</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {user?.department ? `${getFullDepartmentName(user.department)} Students` : 'Department Students'}
+          </h1>
           <p className="mt-1 text-sm text-slate-500">View and manage students in your department.</p>
         </div>
         

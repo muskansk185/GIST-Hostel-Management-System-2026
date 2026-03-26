@@ -184,7 +184,9 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
             </div>
             <div className="hidden md:block text-left text-sm">
               <p className="font-medium text-slate-700">{user?.name || 'User'}</p>
-              <p className="text-xs text-slate-500">{user?.role}</p>
+              <p className="text-xs text-slate-500">
+                {user?.role === 'HOD' && user?.department ? `${user.department} HOD` : user?.role}
+              </p>
             </div>
           </button>
 

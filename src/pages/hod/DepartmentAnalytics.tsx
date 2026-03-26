@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import api from '../../api/axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { AlertCircle, BarChart3, PieChart as PieChartIcon, Activity } from 'lucide-react';
+import { getFullDepartmentName } from '../../constants/departments';
 
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -73,7 +74,9 @@ const DepartmentAnalytics: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Department Analytics</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {user?.department ? `${getFullDepartmentName(user.department)} Analytics` : 'Department Analytics'}
+        </h1>
         <p className="mt-1 text-sm text-slate-500">Visual overview of your department's hostel statistics.</p>
       </div>
 
