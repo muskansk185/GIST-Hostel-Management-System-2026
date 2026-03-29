@@ -393,6 +393,64 @@ const StudentOverview: React.FC = () => {
             <p className="text-sm font-medium text-slate-500">Total Complaints</p>
           </div>
         </div>
+
+        {/* Complaints List (Read-only for Parents) */}
+        <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden lg:col-span-2">
+          <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex items-center gap-3">
+            <div className="rounded-lg bg-rose-100 p-2 text-rose-600">
+              <MessageSquare className="h-5 w-5" />
+            </div>
+            <h2 className="text-lg font-semibold text-slate-900">Complaints History</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Urgency</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Expected Resolution</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {complaints.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500 italic">No complaints recorded.</td>
+                  </tr>
+                ) : (
+                  complaints.map((complaint) => (
+                    <tr key={complaint._id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{complaint.category}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate" title={complaint.description}>{complaint.description}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+                          complaint.urgency === 'high' ? 'bg-red-50 text-red-700 ring-red-600/20' :
+                          complaint.urgency === 'medium' ? 'bg-orange-50 text-orange-700 ring-orange-600/20' :
+                          'bg-green-50 text-green-700 ring-green-600/20'
+                        }`}>
+                          {complaint.urgency || 'low'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+                          complaint.status === 'resolved' ? 'bg-green-50 text-green-700 ring-green-600/20' :
+                          complaint.status === 'in-progress' ? 'bg-blue-50 text-blue-700 ring-blue-600/20' :
+                          'bg-amber-50 text-amber-700 ring-amber-600/20'
+                        }`}>
+                          {complaint.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {complaint.expectedResolutionTime ? new Date(complaint.expectedResolutionTime).toLocaleDateString() : 'N/A'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import {
   updateComplaintStatus,
   updateComplaintPriority,
   assignStaff,
+  assignWarden,
   getRoomComplaints
 } from '../controllers/complaint.controller';
 import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware';
@@ -15,7 +16,8 @@ import {
   createComplaintSchema,
   updateComplaintStatusSchema,
   updateComplaintPrioritySchema,
-  assignStaffSchema
+  assignStaffSchema,
+  assignWardenSchema
 } from '../validations/complaint.validation';
 import { UserRole } from '../models/User';
 
@@ -30,7 +32,8 @@ router.get('/student/:studentId', authenticateJWT, authorizeRoles(UserRole.PAREN
 router.get('/', authenticateJWT, authorizeRoles(UserRole.SUPER_ADMIN, UserRole.WARDEN), getAllComplaints);
 router.patch('/:complaintId/status', authenticateJWT, authorizeRoles(UserRole.SUPER_ADMIN, UserRole.WARDEN), validateRequest(updateComplaintStatusSchema), updateComplaintStatus);
 router.patch('/:complaintId/priority', authenticateJWT, authorizeRoles(UserRole.SUPER_ADMIN, UserRole.WARDEN), validateRequest(updateComplaintPrioritySchema), updateComplaintPriority);
-router.patch('/:complaintId/assign', authenticateJWT, authorizeRoles(UserRole.SUPER_ADMIN, UserRole.WARDEN), validateRequest(assignStaffSchema), assignStaff);
+router.patch('/:complaintId/assign-staff', authenticateJWT, authorizeRoles(UserRole.SUPER_ADMIN, UserRole.WARDEN), validateRequest(assignStaffSchema), assignStaff);
+router.patch('/:complaintId/assign', authenticateJWT, authorizeRoles(UserRole.SUPER_ADMIN, UserRole.WARDEN), validateRequest(assignWardenSchema), assignWarden);
 
 // Room Complaint API
 router.get('/room/:roomId', authenticateJWT, authorizeRoles(UserRole.SUPER_ADMIN, UserRole.WARDEN), getRoomComplaints);

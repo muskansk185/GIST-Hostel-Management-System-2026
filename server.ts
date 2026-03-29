@@ -15,6 +15,7 @@ import leaveRoutes from './server/routes/leave.routes';
 import analyticsRoutes from './server/routes/analytics.routes';
 import userRoutes from './server/routes/user.routes';
 import systemRoutes from './server/routes/system.routes';
+import settingsRoutes from './server/routes/settings.routes';
 import seedRoutes from './server/routes/seed.routes';
 import hodRoutes from './server/routes/hod.routes';
 import alertRoutes from './server/routes/alert.routes';
@@ -46,6 +47,7 @@ async function startServer() {
   app.use('/api/v1/analytics', analyticsRoutes);
   app.use('/api/v1/users', userRoutes);
   app.use('/api/v1/system', systemRoutes);
+  app.use('/api/v1/settings', settingsRoutes);
   app.use('/api/v1/seed', seedRoutes);
   app.use('/api/v1/hod', hodRoutes);
   app.use('/api/v1/alerts', alertRoutes);

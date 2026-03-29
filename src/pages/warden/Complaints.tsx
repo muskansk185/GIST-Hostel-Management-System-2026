@@ -41,22 +41,60 @@ const Complaints: React.FC = () => {
     }
   };
 
-  const filteredComplaints = filter === 'ALL' 
-    ? complaints 
-    : complaints.filter(c => c.status === filter);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'OPEN':
-        return <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">Open</span>;
-      case 'IN_PROGRESS':
-        return <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">In Progress</span>;
-      case 'RESOLVED':
-        return <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Resolved</span>;
-      default:
-        return <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">{status}</span>;
+  const handleAssignWarden = async (complaintId: string, wardenId: string) => {
+    try {
+      await api.patch(`/complaints/${complaintId}/assign`, { wardenId });
+      setComplaints(complaints.map(c => 
+        c._id === complaintId ? { ...c, assignedTo: wardenId } : c
+      ));
+      setNotification({ type: 'success', message: 'Warden assigned successfully.' });
+    } catch (err) {
+      console.error('Failed to assign warden', err);
+      setNotification({ type: 'error', message: 'Failed to assign warden' });
     }
   };
+
+  const filteredComplaints = filter === 'ALL' 
+    ? complaints 
+    : complaints.filter(c => c.status?.toLowerCase() === filter.toLowerCase());
+
+  const getStatusBadge = (status: string) => {
+    const s = status?.toLowerCase();
+    switch (s) {
+      case 'resolved':
+        return <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Resolved</span>;
+      case 'in-progress':
+        return <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">In Progress</span>;
+      default:
+        return <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">Pending</span>;
+    }
+  };
+
+  const getUrgencyBadge = (urgency: string) => {
+    const u = urgency?.toLowerCase();
+    switch (u) {
+      case 'high':
+        return <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-md ring-1 ring-red-200">High</span>;
+      case 'medium':
+        return <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md ring-1 ring-orange-200">Medium</span>;
+      default:
+        return <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-md ring-1 ring-green-200">Low</span>;
+    }
+  };
+
+  const isOverdue = (expectedTime: string, status: string) => {
+    if (!expectedTime || status?.toLowerCase() === 'resolved') return false;
+    return new Date() > new Date(expectedTime);
+  };
+
+  const sortedComplaints = [...filteredComplaints].sort((a, b) => {
+    const urgencyMap: any = { high: 0, medium: 1, low: 2 };
+    const urgencyA = urgencyMap[a.urgency?.toLowerCase()] ?? 3;
+    const urgencyB = urgencyMap[b.urgency?.toLowerCase()] ?? 3;
+    
+    if (urgencyA !== urgencyB) return urgencyA - urgencyB;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   if (error) {
     return (
@@ -95,8 +133,8 @@ const Complaints: React.FC = () => {
             className="block w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
           >
             <option value="ALL">All Statuses</option>
-            <option value="OPEN">Open</option>
-            <option value="IN_PROGRESS">In Progress</option>
+            <option value="PENDING">Pending</option>
+            <option value="IN-PROGRESS">In Progress</option>
             <option value="RESOLVED">Resolved</option>
           </select>
         </div>
@@ -111,7 +149,7 @@ const Complaints: React.FC = () => {
             <h2 className="text-lg font-semibold text-slate-900">Complaint List</h2>
           </div>
           <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
-            {filteredComplaints.length} Complaints
+            {sortedComplaints.length} Complaints
           </span>
         </div>
         
@@ -123,7 +161,7 @@ const Complaints: React.FC = () => {
                   Student
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Category
+                  Category & Urgency
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Description
@@ -146,7 +184,7 @@ const Complaints: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ) : filteredComplaints.length === 0 ? (
+              ) : sortedComplaints.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                     <MessageSquare className="h-12 w-12 mx-auto text-slate-300 mb-3" />
@@ -154,8 +192,8 @@ const Complaints: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredComplaints.map((complaint) => (
-                  <tr key={complaint._id} className="hover:bg-slate-50 transition-colors">
+                sortedComplaints.map((complaint) => (
+                  <tr key={complaint._id} className={`hover:bg-slate-50 transition-colors ${isOverdue(complaint.expectedResolutionTime, complaint.status) ? 'bg-red-50/30' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-slate-900">
                         {complaint.student?.personalDetails?.firstName} {complaint.student?.personalDetails?.lastName}
@@ -164,29 +202,55 @@ const Complaints: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-900">{complaint.category}</div>
-                      <div className="text-xs text-slate-500">{new Date(complaint.createdAt).toLocaleDateString()}</div>
+                      <div className="mt-1 flex items-center gap-2">
+                        {getUrgencyBadge(complaint.urgency)}
+                        {isOverdue(complaint.expectedResolutionTime, complaint.status) && (
+                          <span className="text-[10px] font-bold text-red-600 uppercase">Overdue</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-slate-900 max-w-xs truncate" title={complaint.description}>
+                      <div className="text-sm text-slate-900 max-w-xs truncate font-medium" title={complaint.title}>
                         {complaint.title}
                       </div>
                       <div className="text-xs text-slate-500 max-w-xs truncate" title={complaint.description}>
                         {complaint.description}
+                      </div>
+                      <div className="mt-1 text-[10px] text-slate-400">
+                        Target: {new Date(complaint.expectedResolutionTime).toLocaleString()}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(complaint.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <select
-                        value={complaint.status}
-                        onChange={(e) => handleStatusUpdate(complaint._id, e.target.value)}
-                        className="block w-full rounded-md border-0 py-1.5 pl-3 pr-8 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                      >
-                        <option value="OPEN">Open</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="RESOLVED">Resolved</option>
-                      </select>
+                      <div className="flex flex-col gap-2">
+                        <select
+                          value={complaint.status?.toUpperCase()}
+                          onChange={(e) => handleStatusUpdate(complaint._id, e.target.value.toLowerCase())}
+                          className="block w-full rounded-md border-0 py-1.5 pl-3 pr-8 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        >
+                          <option value="PENDING">Pending</option>
+                          <option value="IN-PROGRESS">In Progress</option>
+                          <option value="RESOLVED">Resolved</option>
+                        </select>
+                        
+                        {user?.role === 'SUPER_ADMIN' && (
+                          <div className="text-left">
+                            <label className="text-[10px] uppercase text-slate-400 font-bold ml-1">Assign Warden</label>
+                            <select
+                              value={complaint.assignedTo || ''}
+                              onChange={(e) => handleAssignWarden(complaint._id, e.target.value)}
+                              className="mt-0.5 block w-full rounded-md border-0 py-1 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 text-xs"
+                            >
+                              <option value="">Unassigned</option>
+                              {/* Wardens would be populated here in a real app */}
+                              <option value="warden1">Warden 1</option>
+                              <option value="warden2">Warden 2</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Server, Activity, Users, Home, DoorOpen, ToggleLeft, ToggleRight, Loader2, Database, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Shield, Server, Activity, Users, Home, DoorOpen, ToggleLeft, ToggleRight, Loader2, Database, AlertCircle, CheckCircle2, X, Calendar, Download } from 'lucide-react';
 import api from '../../api/axios';
 
 const SystemSettings: React.FC = () => {
@@ -10,10 +10,12 @@ const SystemSettings: React.FC = () => {
   const [isSeeding, setIsSeeding] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [notification, setNotification] = useState<{show: boolean, type: 'success' | 'error', message: string}>({
     show: false,
     type: 'success',
@@ -45,8 +47,10 @@ const SystemSettings: React.FC = () => {
 
   const toggleMaintenanceMode = async () => {
     try {
-      const response = await api.post('/system/maintenance');
-      setMaintenanceMode(response.data.maintenanceMode);
+      const response = await api.patch('/settings/maintenance', {
+        maintenanceMode: !maintenanceMode
+      });
+      setMaintenanceMode(response.data.data.maintenanceMode);
       showNotification('success', response.data.message);
     } catch (err: any) {
       showNotification('error', 'Failed to toggle maintenance mode');
@@ -100,6 +104,42 @@ const SystemSettings: React.FC = () => {
     }
   };
 
+  const handleResetAcademicYear = async () => {
+    setShowResetModal(false);
+    setIsResetting(true);
+    try {
+      const response = await api.post('/accommodation/start-new-year', {
+        newYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+      });
+      showNotification('success', response.data.message || 'Academic year reset successfully');
+      
+      // Download report if available
+      if (response.data.report) {
+        downloadReport(response.data.report, `academic_year_reset_${new Date().getFullYear()}.json`);
+      }
+
+      // Refresh system info
+      const infoResponse = await api.get('/system/info');
+      setSystemInfo(infoResponse.data);
+    } catch (err: any) {
+      showNotification('error', err.response?.data?.message || 'Failed to reset academic year');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const downloadReport = (data: any, filename: string) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -125,11 +165,40 @@ const SystemSettings: React.FC = () => {
     { role: 'PARENT', access: 'Linked student overview, fee payment, leave approvals' },
   ];
 
+  const handleDownloadSystemReport = async () => {
+    try {
+      const response = await api.get('/system/report');
+      downloadReport(response.data, `system_report_${new Date().toISOString().split('T')[0]}.json`);
+      showNotification('success', 'System report downloaded successfully');
+    } catch (err: any) {
+      showNotification('error', 'Failed to download system report');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">System Settings</h1>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={handleDownloadSystemReport}
+            className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
+          >
+            <Download className="h-4 w-4" />
+            Download Report
+          </button>
+          <button
+            onClick={() => setShowResetModal(true)}
+            disabled={isResetting || isClearing || isSeeding}
+            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:opacity-50"
+          >
+            {isResetting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Calendar className="h-4 w-4" />
+            )}
+            {isResetting ? 'Resetting...' : 'Start New Academic Year'}
+          </button>
           <button
             onClick={handleFixLegacyData}
             disabled={isFixing || isSeeding || isClearing}
@@ -186,6 +255,41 @@ const SystemSettings: React.FC = () => {
           >
             <X className="h-4 w-4" />
           </button>
+        </div>
+      )}
+
+      {/* Reset Academic Year Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                <Calendar className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Start New Academic Year</h3>
+                <p className="mt-2 text-sm text-slate-500">
+                  This action will <span className="font-bold text-emerald-600">unassign all currently assigned students</span> from their beds and record their stay in the accommodation history. 
+                  <br /><br />
+                  A summary report will be generated and downloaded automatically. This is typically done at the end of an academic year.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="rounded-md px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetAcademicYear}
+                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+              >
+                Yes, Start New Year
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

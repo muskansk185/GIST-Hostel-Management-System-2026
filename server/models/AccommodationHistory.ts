@@ -10,6 +10,10 @@ export interface IAccommodationHistory extends Document {
   assignedAt: Date;
   vacatedAt?: Date;
   assignedBy: mongoose.Types.ObjectId;
+  academicYear: string;
+  wardenId?: mongoose.Types.ObjectId;
+  wardenName?: string;
+  wardenContact?: string;
 }
 
 const AccommodationHistorySchema: Schema = new Schema({
@@ -21,7 +25,11 @@ const AccommodationHistorySchema: Schema = new Schema({
   hostelId: { type: Schema.Types.ObjectId, ref: 'Hostel', required: true },
   assignedAt: { type: Date, default: Date.now, required: true },
   vacatedAt: { type: Date },
-  assignedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }
+  assignedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  academicYear: { type: String, required: true },
+  wardenId: { type: Schema.Types.ObjectId, ref: 'User' },
+  wardenName: { type: String },
+  wardenContact: { type: String }
 }, { timestamps: true });
 
 AccommodationHistorySchema.index({ studentId: 1 });

@@ -31,10 +31,11 @@ const NoticeBoard: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.get('/notices');
-      setNotices(response.data);
+      setNotices(Array.isArray(response.data) ? response.data : []);
     } catch (err: any) {
       console.error('Failed to fetch notices', err);
       setError('Failed to load notices');
+      setNotices([]);
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,9 @@ const NoticeBoard: React.FC = () => {
 
   const canCreateNotice = user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.WARDEN;
 
-  if (loading && notices.length === 0) {
+  const safeNotices = Array.isArray(notices) ? notices : [];
+
+  if (loading && safeNotices.length === 0) {
     return (
       <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center justify-between mb-4">
@@ -105,10 +108,10 @@ const NoticeBoard: React.FC = () => {
           </div>
         )}
         
-        {notices.length === 0 ? (
+        {safeNotices.length === 0 ? (
           <p className="text-sm text-slate-500 italic">No active notices.</p>
         ) : (
-          notices.map((notice) => (
+          safeNotices.map((notice) => (
             <div key={notice._id} className="border-l-4 border-indigo-500 pl-4 py-2 bg-slate-50 rounded-r-lg">
               <div className="flex justify-between items-start">
                 <p className="text-sm font-bold text-slate-900">{notice.title}</p>

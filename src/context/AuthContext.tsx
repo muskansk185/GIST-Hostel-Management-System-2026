@@ -25,6 +25,9 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+  checkMaintenance: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,9 +44,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState('');
+
+  const checkMaintenance = async () => {
+    try {
+      const response = await api.get('/settings');
+      setMaintenanceMode(response.data.maintenanceMode);
+      setMaintenanceMessage(response.data.message);
+    } catch (error) {
+      console.error('Failed to fetch maintenance status', error);
+    }
+  };
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
+      await checkMaintenance();
       if (token) {
         try {
           const storedUser = localStorage.getItem('user');
@@ -58,7 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
     };
 
-    checkAuth();
+    init();
   }, [token]);
 
   const login = (newToken: string, newUser: User) => {
@@ -76,7 +92,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      login, 
+      logout, 
+      isAuthenticated: !!token, 
+      loading,
+      maintenanceMode,
+      maintenanceMessage,
+      checkMaintenance
+    }}>
       {children}
     </AuthContext.Provider>
   );

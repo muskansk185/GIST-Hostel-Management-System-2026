@@ -18,6 +18,7 @@ export interface IUser extends Document {
   studentIds?: mongoose.Types.ObjectId[];
   department?: string;
   hostelId?: mongoose.Types.ObjectId;
+  profilePicture?: string;
 }
 
 const UserSchema: Schema = new Schema({
@@ -29,7 +30,8 @@ const UserSchema: Schema = new Schema({
   isActive: { type: Boolean, default: true },
   studentIds: [{ type: Schema.Types.ObjectId, ref: 'Student' }],
   department: { type: String },
-  hostelId: { type: Schema.Types.ObjectId, ref: 'Hostel' }
+  hostelId: { type: Schema.Types.ObjectId, ref: 'Hostel' },
+  profilePicture: { type: String }
 }, { timestamps: true });
 
 export default mongoose.model<IUser>('User', UserSchema);

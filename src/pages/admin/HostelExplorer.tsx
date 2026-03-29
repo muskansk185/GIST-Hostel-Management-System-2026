@@ -99,7 +99,10 @@ const HostelExplorer: React.FC = () => {
   const fetchStudents = async () => {
     try {
       const res = await api.get('/students?unassigned=true');
-      setStudents(res.data);
+      // Ensure no duplicates and no assigned students
+      const uniqueStudents = Array.from(new Map(res.data.map((s: any) => [s._id, s])).values());
+      const unassignedStudents = uniqueStudents.filter((s: any) => !s.roomId);
+      setStudents(unassignedStudents as Student[]);
     } catch (err: any) {
       console.error('Error fetching students:', err);
     }
@@ -171,6 +174,7 @@ const HostelExplorer: React.FC = () => {
       showToast('Student assigned successfully', 'success');
       setBedModal({ isOpen: false, bed: null });
       fetchHierarchy();
+      fetchStudents();
     } catch (err: any) {
       console.error('Error assigning bed:', err);
       showToast(err.response?.data?.message || 'Failed to assign bed', 'error');
@@ -190,6 +194,7 @@ const HostelExplorer: React.FC = () => {
       showToast('Bed vacated successfully', 'success');
       setBedModal({ isOpen: false, bed: null });
       fetchHierarchy();
+      fetchStudents();
     } catch (err: any) {
       console.error('Error vacating bed:', err);
       showToast(err.response?.data?.message || 'Failed to vacate bed', 'error');
@@ -209,6 +214,7 @@ const HostelExplorer: React.FC = () => {
       setTransferModal({ isOpen: false, bed: null });
       setSelectedNewBedId('');
       fetchHierarchy();
+      fetchStudents();
     } catch (err: any) {
       console.error('Error transferring student:', err);
       showToast(err.response?.data?.message || 'Failed to transfer student', 'error');

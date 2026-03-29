@@ -8,19 +8,21 @@ import Floor from '../models/Floor';
 import Block from '../models/Block';
 import Student from '../models/Student';
 import AccommodationHistory from '../models/AccommodationHistory';
+import AcademicYear from '../models/AcademicYear';
+import User from '../models/User';
 
 // Helper to get full hierarchy IDs for a bed
-const getBedHierarchy = async (bedId: string) => {
-  const bed = await Bed.findById(bedId);
+const getBedHierarchy = async (bedId: string, session?: mongoose.ClientSession) => {
+  const bed = await Bed.findById(bedId).session(session || null);
   if (!bed) throw new Error('Bed not found');
   
-  const room = await Room.findById(bed.roomId);
+  const room = await Room.findById(bed.roomId).session(session || null);
   if (!room) throw new Error('Room not found');
   
-  const floor = await Floor.findById(room.floorId);
+  const floor = await Floor.findById(room.floorId).session(session || null);
   if (!floor) throw new Error('Floor not found');
   
-  const block = await Block.findById(floor.blockId);
+  const block = await Block.findById(floor.blockId).session(session || null);
   if (!block) throw new Error('Block not found');
   
   return {
@@ -53,7 +55,7 @@ export const assignAccommodation = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const hierarchy = await getBedHierarchy(bedId);
+    const hierarchy = await getBedHierarchy(bedId, session);
 
     // RBAC: Warden can only assign beds in their assigned hostel
     if (req.user?.role === UserRole.WARDEN && req.user.hostelId && hierarchy.hostelId.toString() !== req.user.hostelId.toString()) {
@@ -79,19 +81,36 @@ export const assignAccommodation = async (req: AuthRequest, res: Response) => {
     bed.status = BedStatus.OCCUPIED;
     await bed.save({ session });
 
-    // student.hostelId = hierarchy.hostelId;
-    // await student.save({ session });
     student.hostelId = hierarchy.hostelId;
+    student.blockId = hierarchy.blockId;
     student.roomId = hierarchy.roomId;
     student.bedId = hierarchy.bedId;
     student.accommodationStatus = "HOSTELLER";
 
     await student.save({ session });
 
+    // Get current active academic year
+    let currentYear = await AcademicYear.findOne({ isActive: true }).session(session);
+    if (!currentYear) {
+      // If no active year, use/create one as fallback
+      currentYear = await AcademicYear.findOneAndUpdate(
+        { year: '2024-2025' },
+        { isActive: true },
+        { upsert: true, new: true, session }
+      );
+    }
+
+    // Find warden for this hostel
+    const warden = await User.findOne({ role: UserRole.WARDEN, hostelId: hierarchy.hostelId }).session(session);
+
     const history = new AccommodationHistory({
       studentId,
       ...hierarchy,
-      assignedBy
+      assignedBy,
+      academicYear: currentYear.year,
+      wardenId: warden?._id,
+      wardenName: warden ? warden.name : 'Unknown',
+      wardenContact: warden?.phone || 'Unknown'
     });
     await history.save({ session });
 
@@ -126,8 +145,8 @@ export const transferAccommodation = async (req: AuthRequest, res: Response) => 
       return;
     }
 
-    const currentHierarchy = await getBedHierarchy(currentBed._id.toString());
-    const newHierarchy = await getBedHierarchy(newBedId);
+    const currentHierarchy = await getBedHierarchy(currentBed._id.toString(), session);
+    const newHierarchy = await getBedHierarchy(newBedId, session);
 
     // RBAC: Warden can only transfer students within their assigned hostel
     if (req.user?.role === UserRole.WARDEN && req.user.hostelId) {
@@ -145,7 +164,7 @@ export const transferAccommodation = async (req: AuthRequest, res: Response) => 
       return;
     }
 
-    const hierarchy = await getBedHierarchy(newBedId);
+    const hierarchy = await getBedHierarchy(newBedId, session);
 
     // Free current bed
     currentBed.studentId = undefined;
@@ -157,6 +176,16 @@ export const transferAccommodation = async (req: AuthRequest, res: Response) => 
     newBed.status = BedStatus.OCCUPIED;
     await newBed.save({ session });
 
+    // Update student allocation
+    const student = await Student.findById(studentId).session(session);
+    if (student) {
+      student.hostelId = hierarchy.hostelId;
+      student.blockId = hierarchy.blockId;
+      student.roomId = hierarchy.roomId;
+      student.bedId = hierarchy.bedId;
+      await student.save({ session });
+    }
+
     // Update history for old bed
     await AccommodationHistory.updateMany(
       { studentId, bedId: currentBed._id, vacatedAt: { $exists: false } },
@@ -164,11 +193,29 @@ export const transferAccommodation = async (req: AuthRequest, res: Response) => 
       { session }
     );
 
+    // Get current active academic year
+    let currentYear = await AcademicYear.findOne({ isActive: true }).session(session);
+    if (!currentYear) {
+      // If no active year, use/create one as fallback
+      currentYear = await AcademicYear.findOneAndUpdate(
+        { year: '2024-2025' },
+        { isActive: true },
+        { upsert: true, new: true, session }
+      );
+    }
+
+    // Find warden for this hostel
+    const warden = await User.findOne({ role: UserRole.WARDEN, hostelId: hierarchy.hostelId }).session(session);
+
     // Create new history
     const history = new AccommodationHistory({
       studentId,
       ...hierarchy,
-      assignedBy
+      assignedBy,
+      academicYear: currentYear.year,
+      wardenId: warden?._id,
+      wardenName: warden ? warden.name : 'Unknown',
+      wardenContact: warden?.phone || 'Unknown'
     });
     await history.save({ session });
 
@@ -195,7 +242,7 @@ export const vacateAccommodation = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const currentHierarchy = await getBedHierarchy(currentBed._id.toString());
+    const currentHierarchy = await getBedHierarchy(currentBed._id.toString(), session);
 
     // RBAC: Warden can only vacate students from their assigned hostel
     if (req.user?.role === UserRole.WARDEN && req.user.hostelId && currentHierarchy.hostelId.toString() !== req.user.hostelId.toString()) {
@@ -211,6 +258,7 @@ export const vacateAccommodation = async (req: AuthRequest, res: Response) => {
 
     const student = await Student.findById(studentId).session(session);
     student.hostelId = undefined;
+    student.blockId = undefined;
     student.roomId = undefined;
     student.bedId = undefined;
     student.accommodationStatus = "DAY_SCHOLAR";
@@ -445,6 +493,188 @@ export const getHostelOccupancyStats = async (req: AuthRequest, res: Response) =
       maintenanceBeds: 0,
       occupancyRate: 0
     });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const startNewAcademicYear = async (req: AuthRequest, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { newYear } = req.body; // e.g., "2025-2026"
+    const assignedBy = req.user?.userId;
+
+    // 1. Get current active academic year
+    let currentYear = await AcademicYear.findOne({ isActive: true }).session(session);
+    if (!currentYear) {
+      // If no active year, use/create one as fallback
+      currentYear = await AcademicYear.findOneAndUpdate(
+        { year: '2024-2025' },
+        { isActive: true },
+        { upsert: true, new: true, session }
+      );
+    }
+
+    // 2. Fetch all current student allocations (beds that are OCCUPIED)
+    const occupiedBeds = await Bed.find({ status: BedStatus.OCCUPIED }).session(session);
+    
+    const vacatedStudents: any[] = [];
+
+    for (const bed of occupiedBeds) {
+      if (!bed.studentId) continue;
+
+      const student = await Student.findById(bed.studentId).session(session);
+      if (!student) continue;
+
+      const hierarchy = await getBedHierarchy(bed._id.toString(), session);
+      
+      // Find warden for this hostel
+      const warden = await User.findOne({ role: UserRole.WARDEN, hostelId: hierarchy.hostelId }).session(session);
+
+      // 3. Store records in AccommodationHistory with academicYear + warden snapshot
+      const history = new AccommodationHistory({
+        studentId: student._id,
+        ...hierarchy,
+        assignedBy,
+        academicYear: currentYear.year,
+        wardenId: warden?._id,
+        wardenName: warden ? warden.name : 'Unknown',
+        wardenContact: warden?.phone || 'Unknown',
+        vacatedAt: new Date() // Snapshotting current state as vacated for history
+      });
+      await history.save({ session });
+
+      vacatedStudents.push({
+        studentId: student._id,
+        name: `${student.personalDetails?.firstName} ${student.personalDetails?.lastName}`,
+        rollNumber: student.personalDetails?.rollNumber,
+        hostel: hierarchy.hostelId,
+        room: hierarchy.roomId,
+        bed: hierarchy.bedId
+      });
+
+      // 4. Clear Student room allocation
+      student.hostelId = undefined;
+      student.blockId = undefined;
+      student.roomId = undefined;
+      student.bedId = undefined;
+      student.accommodationStatus = "DAY_SCHOLAR";
+      await student.save({ session });
+
+      // 5. Clear Bed occupancy
+      bed.studentId = undefined;
+      bed.status = BedStatus.AVAILABLE;
+      await bed.save({ session });
+    }
+
+    // 6. Update AcademicYear: Set old inactive, create/update new active year
+    currentYear.isActive = false;
+    await currentYear.save({ session });
+
+    const nextYear = await AcademicYear.findOneAndUpdate(
+      { year: newYear },
+      { isActive: true },
+      { upsert: true, new: true, session }
+    );
+
+    await session.commitTransaction();
+    
+    const report = {
+      reportName: 'Academic Year Reset Report',
+      timestamp: new Date(),
+      previousYear: currentYear.year,
+      newYear: nextYear.year,
+      totalStudentsVacated: vacatedStudents.length,
+      vacatedStudents
+    };
+
+    res.status(200).json({ 
+      message: 'New academic year started successfully', 
+      currentYear: currentYear.year, 
+      nextYear: nextYear.year,
+      report 
+    });
+  } catch (error: any) {
+    await session.abortTransaction();
+    res.status(500).json({ message: 'Server error', error: error.message });
+  } finally {
+    session.endSession();
+  }
+};
+
+export const getAccommodationHistory = async (req: AuthRequest, res: Response) => {
+  try {
+    const { studentId } = req.params;
+
+    // RBAC: Students can only view their own history
+    if (req.user?.role === UserRole.STUDENT) {
+      const student = await Student.findOne({ userId: req.user.userId });
+      if (!student || student._id.toString() !== studentId) {
+        res.status(403).json({ message: 'Access denied: You can only view your own history' });
+        return;
+      }
+    }
+
+    const history = await AccommodationHistory.find({ studentId })
+      .populate('hostelId', 'name')
+      .populate('blockId', 'name')
+      .populate('roomId', 'roomNumber')
+      .populate('bedId', 'bedNumber')
+      .sort({ assignedAt: -1 })
+      .lean();
+
+    const formattedHistory = history.map((h: any) => ({
+      ...h,
+      academicYear: h.academicYear,
+      room: h.roomId?.roomNumber || 'Unknown',
+      block: h.blockId?.name || 'Unknown',
+      hostelName: h.hostelId?.name || 'Unknown',
+      blockName: h.blockId?.name || 'Unknown',
+      roomNumber: h.roomId?.roomNumber || 'Unknown',
+      bedNumber: h.bedId?.bedNumber || 'Unknown',
+      wardenName: h.wardenName,
+      wardenContact: h.wardenContact,
+      unassignedAt: h.vacatedAt
+    }));
+
+    res.status(200).json(formattedHistory);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const getMyAccommodationHistory = async (req: AuthRequest, res: Response) => {
+  try {
+    const student = await Student.findOne({ userId: req.user?.userId });
+    if (!student) {
+      res.status(404).json({ message: 'Student not found' });
+      return;
+    }
+    
+    const history = await AccommodationHistory.find({ studentId: student._id })
+      .populate('hostelId', 'name')
+      .populate('blockId', 'name')
+      .populate('roomId', 'roomNumber')
+      .populate('bedId', 'bedNumber')
+      .sort({ assignedAt: -1 })
+      .lean();
+
+    const formattedHistory = history.map((h: any) => ({
+      ...h,
+      academicYear: h.academicYear,
+      room: h.roomId?.roomNumber || 'Unknown',
+      block: h.blockId?.name || 'Unknown',
+      hostelName: h.hostelId?.name || 'Unknown',
+      blockName: h.blockId?.name || 'Unknown',
+      roomNumber: h.roomId?.roomNumber || 'Unknown',
+      bedNumber: h.bedId?.bedNumber || 'Unknown',
+      wardenName: h.wardenName,
+      wardenContact: h.wardenContact,
+      unassignedAt: h.vacatedAt
+    }));
+
+    res.status(200).json(formattedHistory);
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

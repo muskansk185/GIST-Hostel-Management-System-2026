@@ -114,6 +114,7 @@
       // Let's check if the request asks for unassigned only
       if (req.query.unassigned === 'true') {
         query._id = { $nin: assignedStudentIds };
+        query.roomId = null;
       }
 
       // If it's for parent linking, we might want to exclude students already linked to a parent

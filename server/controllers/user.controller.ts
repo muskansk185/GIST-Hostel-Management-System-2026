@@ -93,7 +93,8 @@ export const createUser = async (req: Request, res: Response) => {
       role: newUser.role,
       phone: newUser.phone,
       isActive: newUser.isActive,
-      createdAt: (newUser as any).createdAt
+      createdAt: (newUser as any).createdAt,
+      profilePicture: newUser.profilePicture
     };
 
     res.status(201).json(userResponse);
@@ -216,7 +217,7 @@ export const getUsers = async (req: Request, res: Response) => {
       ];
     }
 
-    const users = await User.find(query).select('id name email role isActive createdAt studentIds phone hostelId department');
+    const users = await User.find(query).select('id name email role isActive createdAt studentIds phone hostelId department profilePicture');
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
@@ -233,7 +234,7 @@ export const getParentByStudentId = async (req: Request, res: Response) => {
     const parent = await User.findOne({ 
       role: 'PARENT', 
       studentIds: studentId 
-    }).select('id name email role phone isActive createdAt');
+    }).select('id name email role phone isActive createdAt profilePicture');
 
     if (!parent) {
       return res.status(404).json({ message: 'Parent not found for this student' });

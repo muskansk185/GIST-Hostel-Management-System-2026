@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import Complaint, { ComplaintStatus } from '../models/Complaint';
+import Complaint, { ComplaintStatus, ComplaintUrgency, ComplaintCategory } from '../models/Complaint';
 import Student from '../models/Student';
 import Alert from '../models/Alert';
 import User, { UserRole } from '../models/User';
@@ -9,12 +9,32 @@ import User, { UserRole } from '../models/User';
 export const createComplaint = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
-    const { roomId, bedId, category, title, description, priority } = req.body;
+    const { roomId, bedId, category, title, description, urgency: providedUrgency } = req.body;
 
     const student = await Student.findOne({ userId });
     if (!student) {
       res.status(404).json({ message: 'Student profile not found' });
       return;
+    }
+
+    let urgency = providedUrgency;
+    if (!urgency) {
+      if (category === ComplaintCategory.ELECTRICAL || category === ComplaintCategory.PLUMBING) {
+        urgency = ComplaintUrgency.HIGH;
+      } else if (category === ComplaintCategory.CLEANING) {
+        urgency = ComplaintUrgency.MEDIUM;
+      } else {
+        urgency = ComplaintUrgency.LOW;
+      }
+    }
+
+    const expectedResolutionTime = new Date();
+    if (urgency === ComplaintUrgency.HIGH) {
+      expectedResolutionTime.setHours(expectedResolutionTime.getHours() + 6);
+    } else if (urgency === ComplaintUrgency.MEDIUM) {
+      expectedResolutionTime.setHours(expectedResolutionTime.getHours() + 24);
+    } else {
+      expectedResolutionTime.setDate(expectedResolutionTime.getDate() + 3);
     }
 
     const complaint = new Complaint({
@@ -24,7 +44,8 @@ export const createComplaint = async (req: Request, res: Response) => {
       category,
       title,
       description,
-      priority
+      urgency,
+      expectedResolutionTime
     });
 
     await complaint.save();
@@ -41,6 +62,41 @@ export const createComplaint = async (req: Request, res: Response) => {
     }
 
     res.status(201).json({ message: 'Complaint submitted successfully', complaint });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const assignWarden = async (req: Request, res: Response) => {
+  try {
+    const { complaintId } = req.params;
+    const { wardenId } = req.body;
+
+    const warden = await User.findOne({ _id: wardenId, role: UserRole.WARDEN });
+    if (!warden) {
+      res.status(404).json({ message: 'Warden not found' });
+      return;
+    }
+
+    const complaint = await Complaint.findByIdAndUpdate(
+      complaintId,
+      { assignedTo: wardenId, status: ComplaintStatus.IN_PROGRESS },
+      { new: true }
+    );
+
+    if (!complaint) {
+      res.status(404).json({ message: 'Complaint not found' });
+      return;
+    }
+
+    await Alert.create({
+      userId: wardenId,
+      title: 'Complaint Assigned',
+      message: `You have been assigned to a complaint regarding ${complaint.category}.`,
+      type: 'INFO'
+    });
+
+    res.status(200).json({ message: 'Complaint assigned to warden successfully', complaint });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

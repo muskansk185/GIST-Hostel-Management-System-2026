@@ -123,7 +123,7 @@ const FloorPlan: React.FC<FloorPlanProps> = ({ data }) => {
     <div className="flex flex-col h-full">
       {/* Block Selector */}
       <div className="mb-6 flex flex-wrap gap-2">
-        {blocks.map((block) => (
+        {(Array.isArray(blocks) ? blocks : []).map((block) => (
           <button
             key={block.id || block.name}
             onClick={() => {
@@ -144,7 +144,7 @@ const FloorPlan: React.FC<FloorPlanProps> = ({ data }) => {
 
       {/* Floor Plan Grid */}
       <div className="flex-1 overflow-y-auto space-y-8 pb-8">
-        {floorsForSelectedBlock.length === 0 ? (
+        {(!Array.isArray(floorsForSelectedBlock) || floorsForSelectedBlock.length === 0) ? (
           <div className="text-center text-slate-500 py-12 bg-white rounded-xl border border-slate-200">
             No floors found for this block.
           </div>
@@ -158,11 +158,11 @@ const FloorPlan: React.FC<FloorPlanProps> = ({ data }) => {
                 </h3>
               </div>
               <div className="p-6">
-                {floorData.rooms.length === 0 ? (
+                {(!Array.isArray(floorData.rooms) || floorData.rooms.length === 0) ? (
                   <p className="text-sm text-slate-500 italic">No rooms on this floor.</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {[...floorData.rooms].sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true })).map((room, roomIndex) => (
+                    {(Array.isArray(floorData.rooms) ? [...floorData.rooms] : []).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true })).map((room, roomIndex) => (
                       <button
                         key={`${room.roomId || room.roomNumber}-${roomIndex}`}
                         onClick={() => setSelectedRoom(room)}
@@ -207,12 +207,12 @@ const FloorPlan: React.FC<FloorPlanProps> = ({ data }) => {
             
             <div className="p-6 overflow-y-auto">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {selectedRoom.beds.length === 0 ? (
+                {(!Array.isArray(selectedRoom.beds) || selectedRoom.beds.length === 0) ? (
                   <div className="col-span-full text-center text-slate-500 py-8">
                     No beds configured for this room.
                   </div>
                 ) : (
-                  [...selectedRoom.beds].sort((a, b) => a.bedNumber.localeCompare(b.bedNumber, undefined, { numeric: true })).map((bed, bedIndex) => (
+                  (Array.isArray(selectedRoom.beds) ? [...selectedRoom.beds] : []).sort((a, b) => a.bedNumber.localeCompare(b.bedNumber, undefined, { numeric: true })).map((bed, bedIndex) => (
                     <div 
                       key={`${bed._id || bed.bedNumber}-${bedIndex}`} 
                       className={`relative p-4 rounded-xl border-2 flex items-center gap-4 ${getBedStatusColor(bed.status)}`}

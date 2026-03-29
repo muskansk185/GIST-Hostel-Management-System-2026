@@ -310,7 +310,7 @@ export const getComplaintAnalytics = async (req: AuthRequest, res: Response) => 
       { $match: matchStage },
       {
         $group: {
-          _id: '$priority',
+          _id: '$urgency',
           count: { $sum: 1 }
         }
       }
@@ -323,7 +323,7 @@ export const getComplaintAnalytics = async (req: AuthRequest, res: Response) => 
 
     statusStats.forEach(stat => {
       totalComplaints += stat.count;
-      if (stat._id === ComplaintStatus.OPEN) openComplaints = stat.count;
+      if (stat._id === ComplaintStatus.PENDING) openComplaints = stat.count;
       if (stat._id === ComplaintStatus.IN_PROGRESS) inProgressComplaints = stat.count;
       if (stat._id === ComplaintStatus.RESOLVED) resolvedComplaints = stat.count;
     });
@@ -334,7 +334,7 @@ export const getComplaintAnalytics = async (req: AuthRequest, res: Response) => 
     }));
 
     const complaintsByPriority = priorityStats.map(stat => ({
-      priority: stat._id,
+      urgency: stat._id,
       count: stat.count
     }));
 
@@ -499,6 +499,35 @@ export const getStudentDistribution = async (req: AuthRequest, res: Response) =>
     res.status(200).json({
       studentCountByDepartment
     });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const getCommonComplaintCategories = async (req: AuthRequest, res: Response) => {
+  try {
+    const matchStage: any = {};
+    
+    if (req.user?.role === "WARDEN" && req.user.hostelId) {
+      const students = await Student.find({ hostelId: req.user.hostelId }).select('_id');
+      matchStage.studentId = { $in: students.map(s => s._id) };
+    } else if (req.user?.role === "HOD" && req.user.department) {
+      const students = await Student.find({ 'personalDetails.department': req.user.department }).select('_id');
+      matchStage.studentId = { $in: students.map(s => s._id) };
+    }
+
+    const commonCategories = await Complaint.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.status(200).json(commonCategories);
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

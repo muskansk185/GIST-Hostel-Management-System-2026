@@ -10,15 +10,15 @@ export enum ComplaintCategory {
 }
 
 export enum ComplaintStatus {
-  OPEN = 'OPEN',
-  IN_PROGRESS = 'IN_PROGRESS',
-  RESOLVED = 'RESOLVED'
+  PENDING = 'pending',
+  IN_PROGRESS = 'in-progress',
+  RESOLVED = 'resolved'
 }
 
-export enum ComplaintPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH'
+export enum ComplaintUrgency {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high'
 }
 
 export interface IComplaint extends Document {
@@ -29,7 +29,9 @@ export interface IComplaint extends Document {
   title: string;
   description: string;
   status: ComplaintStatus;
-  priority: ComplaintPriority;
+  urgency: ComplaintUrgency;
+  expectedResolutionTime: Date;
+  assignedTo?: mongoose.Types.ObjectId;
   assignedStaff?: string;
   resolvedAt?: Date;
   createdAt: Date;
@@ -43,8 +45,10 @@ const ComplaintSchema: Schema = new Schema({
   category: { type: String, enum: Object.values(ComplaintCategory), required: true },
   title: { type: String, required: true },
   description: { type: String, required: true },
-  status: { type: String, enum: Object.values(ComplaintStatus), default: ComplaintStatus.OPEN },
-  priority: { type: String, enum: Object.values(ComplaintPriority), default: ComplaintPriority.LOW },
+  status: { type: String, enum: Object.values(ComplaintStatus), default: ComplaintStatus.PENDING },
+  urgency: { type: String, enum: Object.values(ComplaintUrgency), default: ComplaintUrgency.LOW },
+  expectedResolutionTime: { type: Date },
+  assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
   assignedStaff: { type: String },
   resolvedAt: { type: Date }
 }, { timestamps: true });
@@ -53,7 +57,7 @@ ComplaintSchema.index({ studentId: 1 });
 ComplaintSchema.index({ roomId: 1 });
 ComplaintSchema.index({ status: 1 });
 ComplaintSchema.index({ category: 1 });
-ComplaintSchema.index({ priority: 1 });
+ComplaintSchema.index({ urgency: 1 });
 ComplaintSchema.index({ createdAt: 1 });
 
 export default mongoose.model<IComplaint>('Complaint', ComplaintSchema);

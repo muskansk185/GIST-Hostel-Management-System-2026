@@ -19,3 +19,9 @@ export const vacateAccommodationSchema = z.object({
     studentId: z.string().min(1, 'Student ID is required')
   })
 });
+
+export const startNewYearSchema = z.object({
+  body: z.object({
+    newYear: z.string().regex(/^\d{4}-\d{4}$/, 'Invalid academic year format (e.g., 2025-2026)')
+  })
+});

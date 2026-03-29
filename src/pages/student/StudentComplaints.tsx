@@ -52,7 +52,7 @@ const StudentComplaints: React.FC = () => {
       title: formData.get('title'),
       description: formData.get('description'),
       category: formData.get('category'),
-      priority: formData.get('priority'),
+      urgency: formData.get('urgency') || undefined,
       roomId: accommodation.roomId._id,
       bedId: accommodation._id
     };
@@ -72,24 +72,27 @@ const StudentComplaints: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'RESOLVED':
-      case 'CLOSED':
+    const s = status?.toLowerCase();
+    switch (s) {
+      case 'resolved':
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            {status}
+            Resolved
           </span>
         );
-      case 'IN_PROGRESS':
+      case 'in-progress':
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
             <Wrench className="h-3.5 w-3.5" />
@@ -100,22 +103,37 @@ const StudentComplaints: React.FC = () => {
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
             <Clock className="h-3.5 w-3.5" />
-            Open
+            Pending
           </span>
         );
     }
   };
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'HIGH':
-        return <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-md">High</span>;
-      case 'MEDIUM':
-        return <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">Medium</span>;
+  const getUrgencyBadge = (urgency: string) => {
+    const u = urgency?.toLowerCase();
+    switch (u) {
+      case 'high':
+        return <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-md ring-1 ring-red-200">High</span>;
+      case 'medium':
+        return <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md ring-1 ring-orange-200">Medium</span>;
       default:
-        return <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-md">Low</span>;
+        return <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-md ring-1 ring-green-200">Low</span>;
     }
   };
+
+  const isOverdue = (expectedTime: string, status: string) => {
+    if (!expectedTime || status?.toLowerCase() === 'resolved') return false;
+    return new Date() > new Date(expectedTime);
+  };
+
+  const sortedComplaints = [...complaints].sort((a, b) => {
+    const urgencyMap: any = { high: 0, medium: 1, low: 2 };
+    const urgencyA = urgencyMap[a.urgency?.toLowerCase()] ?? 3;
+    const urgencyB = urgencyMap[b.urgency?.toLowerCase()] ?? 3;
+    
+    if (urgencyA !== urgencyB) return urgencyA - urgencyB;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   if (error) {
     return (
@@ -173,10 +191,13 @@ const StudentComplaints: React.FC = () => {
                   Category
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Priority
+                  Urgency
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Status
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Expected Resolution
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Date
@@ -186,22 +207,22 @@ const StudentComplaints: React.FC = () => {
             <tbody className="bg-white divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex justify-center items-center gap-2 text-slate-500">
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"></div>
                       Loading complaints...
                     </div>
                   </td>
                 </tr>
-              ) : complaints.length === 0 ? (
+              ) : sortedComplaints.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                     <MessageSquare className="h-12 w-12 mx-auto text-slate-300 mb-3" />
                     <p>No complaints found.</p>
                   </td>
                 </tr>
               ) : (
-                complaints.map((complaint) => (
+                sortedComplaints.map((complaint) => (
                   <tr key={complaint._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="text-sm text-slate-900 max-w-xs truncate" title={complaint.description}>{complaint.description}</div>
@@ -210,10 +231,20 @@ const StudentComplaints: React.FC = () => {
                       <div className="text-sm text-slate-500">{complaint.category}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getPriorityBadge(complaint.priority)}
+                      {getUrgencyBadge(complaint.urgency)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(complaint.status)}
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(complaint.status)}
+                        {isOverdue(complaint.expectedResolutionTime, complaint.status) && (
+                          <span className="inline-flex items-center rounded bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-800 uppercase tracking-wider">
+                            Overdue
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {formatDate(complaint.expectedResolutionTime)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {formatDate(complaint.createdAt)}
@@ -253,11 +284,12 @@ const StudentComplaints: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Priority</label>
-                <select required name="priority" className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white">
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
+                <label className="block text-sm font-medium text-slate-700">Urgency (Optional)</label>
+                <select name="urgency" className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white">
+                  <option value="">Auto-assign based on category</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
                 </select>
               </div>
               <div>

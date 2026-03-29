@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api/axios';
 import { CreditCard, AlertCircle, CheckCircle2, Clock, Download, DollarSign, History, XCircle, X } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const FeeStatus: React.FC = () => {
   const { user } = useAuth();
@@ -94,8 +96,69 @@ const FeeStatus: React.FC = () => {
   };
 
   const handleDownloadReceipt = (fee: any) => {
-    // In a real app, this would generate a PDF or fetch a receipt URL
-    setNotification({ type: 'success', message: `Downloading receipt for ${fee.feeName} - ${fee.academicYear || ''}` });
+    const doc = new jsPDF();
+    const studentName = student ? `${student.personalDetails?.firstName} ${student.personalDetails?.lastName}` : 'Student';
+    const rollNumber = student?.personalDetails?.rollNumber || 'N/A';
+    const hostelName = student?.accommodation?.hostelId?.name || 'N/A';
+    const roomNumber = student?.accommodation?.roomId?.roomNumber || 'N/A';
+
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(79, 70, 229); // Indigo-600
+    doc.text('Hostel Management System', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(16);
+    doc.setTextColor(30, 41, 59); // Slate-800
+    doc.text('Fee Receipt', 105, 30, { align: 'center' });
+
+    // Receipt Info
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // Slate-500
+    doc.text(`Receipt No: REC-${fee._id.substring(0, 8).toUpperCase()}`, 20, 45);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 190, 45, { align: 'right' });
+
+    // Student Details Box
+    doc.setDrawColor(226, 232, 240); // Slate-200
+    doc.setFillColor(248, 250, 252); // Slate-50
+    doc.rect(20, 55, 170, 40, 'F');
+    
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59); // Slate-800
+    doc.text('Student Details:', 25, 65);
+    
+    doc.setFontSize(10);
+    doc.text(`Name: ${studentName}`, 25, 75);
+    doc.text(`Roll Number: ${rollNumber}`, 25, 85);
+    doc.text(`Hostel: ${hostelName}`, 110, 75);
+    doc.text(`Room: ${roomNumber}`, 110, 85);
+
+    // Fee Details Table
+    autoTable(doc, {
+      startY: 105,
+      head: [['Description', 'Academic Year', 'Amount']],
+      body: [
+        [fee.feeName, fee.academicYear || 'N/A', `$${fee.amount}`]
+      ],
+      headStyles: { fillColor: [79, 70, 229] },
+      margin: { left: 20, right: 20 }
+    });
+
+    // Summary
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total Paid: $${fee.amount}`, 190, finalY, { align: 'right' });
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184); // Slate-400
+    doc.text('This is a computer-generated receipt and does not require a physical signature.', 105, 280, { align: 'center' });
+    doc.text('Thank you for your payment!', 105, 285, { align: 'center' });
+
+    doc.save(`Receipt_${fee.feeName}_${rollNumber}.pdf`);
+    
+    setNotification({ type: 'success', message: `Receipt for ${fee.feeName} downloaded successfully.` });
   };
 
   const handlePayNow = async (fee: any) => {

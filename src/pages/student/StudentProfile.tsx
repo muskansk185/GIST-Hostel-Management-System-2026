@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api/axios';
-import { Camera, User, Phone, Mail, MapPin, BookOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Camera, User, Phone, Mail, MapPin, BookOpen, AlertCircle, CheckCircle2, History, Building, Calendar } from 'lucide-react';
 
 const StudentProfile: React.FC = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'profile' | 'history'>('profile');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -14,6 +16,7 @@ const StudentProfile: React.FC = () => {
 
   useEffect(() => {
     fetchProfile();
+    fetchHistory();
   }, []);
 
   const fetchProfile = async () => {
@@ -26,6 +29,15 @@ const StudentProfile: React.FC = () => {
       setError('Failed to load profile data.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchHistory = async () => {
+    try {
+      const res = await api.get('/accommodation/history/me');
+      setHistory(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Failed to fetch history', err);
     }
   };
 
@@ -129,114 +141,194 @@ const StudentProfile: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white shadow-sm ring-1 ring-slate-200 rounded-xl overflow-hidden">
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
-            
-            {/* Profile Image Section */}
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <div className="h-32 w-32 rounded-full overflow-hidden ring-4 ring-white shadow-lg bg-slate-100 flex items-center justify-center">
-                  {profile?.profilePicture ? (
-                    <img 
-                      src={profile.profilePicture} 
-                      alt="Profile" 
-                      className="h-full w-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <User className="h-16 w-16 text-slate-400" />
-                  )}
+      <div className="flex border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+            activeTab === 'profile'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          }`}
+        >
+          Profile Details
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+            activeTab === 'history'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          }`}
+        >
+          Accommodation History
+        </button>
+      </div>
+
+      {activeTab === 'profile' ? (
+        <div className="bg-white shadow-sm ring-1 ring-slate-200 rounded-xl overflow-hidden">
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
+              
+              {/* Profile Image Section */}
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative group">
+                  <div className="h-32 w-32 rounded-full overflow-hidden ring-4 ring-white shadow-lg bg-slate-100 flex items-center justify-center">
+                    {profile?.profilePicture ? (
+                      <img 
+                        src={profile.profilePicture} 
+                        alt="Profile" 
+                        className="h-full w-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <User className="h-16 w-16 text-slate-400" />
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={handleImageClick}
+                    disabled={uploading}
+                    className="absolute bottom-0 right-0 rounded-full bg-indigo-600 p-2 text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
+                    title="Change Profile Picture"
+                  >
+                    {uploading ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    ) : (
+                      <Camera className="h-5 w-5" />
+                    )}
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/jpeg, image/png, image/webp"
+                    className="hidden"
+                  />
+                </div>
+                <div className="text-center">
+                  <h2 className="text-xl font-bold text-slate-900">{profile?.personalDetails?.firstName} {profile?.personalDetails?.lastName}</h2>
+                  <p className="text-sm text-slate-500">{profile?.personalDetails?.rollNumber}</p>
+                </div>
+              </div>
+
+              {/* Profile Details Section */}
+              <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2 mb-1">
+                    <Mail className="h-4 w-4" /> Email Address
+                  </h3>
+                  <p className="text-slate-900">{profile?.personalDetails?.email}</p>
                 </div>
                 
-                <button
-                  onClick={handleImageClick}
-                  disabled={uploading}
-                  className="absolute bottom-0 right-0 rounded-full bg-indigo-600 p-2 text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
-                  title="Change Profile Picture"
-                >
-                  {uploading ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  ) : (
-                    <Camera className="h-5 w-5" />
-                  )}
-                </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/jpeg, image/png, image/webp"
-                  className="hidden"
-                />
-              </div>
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-slate-900">{profile?.personalDetails?.firstName} {profile?.personalDetails?.lastName}</h2>
-                <p className="text-sm text-slate-500">{profile?.personalDetails?.rollNumber}</p>
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2 mb-1">
+                    <Phone className="h-4 w-4" /> Phone Number
+                  </h3>
+                  <p className="text-slate-900">{profile?.personalDetails?.phone}</p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2 mb-1">
+                    <BookOpen className="h-4 w-4" /> Department
+                  </h3>
+                  <p className="text-slate-900">{profile?.personalDetails?.department}</p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2 mb-1">
+                    <User className="h-4 w-4" /> Year
+                  </h3>
+                  <p className="text-slate-900">{profile?.personalDetails?.year || 'N/A'}</p>
+                </div>
               </div>
             </div>
 
-            {/* Profile Details Section */}
-            <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2 mb-1">
-                  <Mail className="h-4 w-4" /> Email Address
-                </h3>
-                <p className="text-slate-900">{profile?.personalDetails?.email}</p>
+            {/* Local Guardian Section */}
+            {profile?.guardianDetails && (
+              <div className="mt-10 pt-8 border-t border-slate-200">
+                <h3 className="text-lg font-medium text-slate-900 mb-4">Local Guardian Details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-lg">
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-500 mb-1">Name</h4>
+                    <p className="text-slate-900">{profile.guardianDetails.guardianName}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-500 mb-1">Relation</h4>
+                    <p className="text-slate-900">{profile.guardianDetails.guardianRelation}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-500 mb-1 flex items-center gap-2">
+                      <Phone className="h-4 w-4" /> Phone
+                    </h4>
+                    <p className="text-slate-900">{profile.guardianDetails.guardianPhone}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-500 mb-1 flex items-center gap-2">
+                      <MapPin className="h-4 w-4" /> Address
+                    </h4>
+                    <p className="text-slate-900">{profile.address?.permanentAddress}</p>
+                  </div>
+                </div>
               </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2 mb-1">
-                  <Phone className="h-4 w-4" /> Phone Number
-                </h3>
-                <p className="text-slate-900">{profile?.personalDetails?.phone}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2 mb-1">
-                  <BookOpen className="h-4 w-4" /> Department
-                </h3>
-                <p className="text-slate-900">{profile?.personalDetails?.department}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-slate-500 flex items-center gap-2 mb-1">
-                  <User className="h-4 w-4" /> Year
-                </h3>
-                <p className="text-slate-900">{profile?.personalDetails?.year || 'N/A'}</p>
-              </div>
-            </div>
+            )}
           </div>
-
-          {/* Local Guardian Section */}
-          {profile?.guardianDetails && (
-            <div className="mt-10 pt-8 border-t border-slate-200">
-              <h3 className="text-lg font-medium text-slate-900 mb-4">Local Guardian Details</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-lg">
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500 mb-1">Name</h4>
-                  <p className="text-slate-900">{profile.guardianDetails.guardianName}</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {history.length === 0 ? (
+            <div className="bg-white shadow-sm ring-1 ring-slate-200 rounded-xl p-12 text-center">
+              <History className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-900">No History Found</h3>
+              <p className="text-slate-500">You don't have any past accommodation records.</p>
+            </div>
+          ) : (
+            history.map((record) => (
+              <div key={record._id} className="bg-white shadow-sm ring-1 ring-slate-200 rounded-xl overflow-hidden">
+                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-indigo-600" />
+                    <span className="font-bold text-slate-900">Academic Year: {record.academicYear}</span>
+                  </div>
+                  <span className="text-xs font-medium text-slate-500">
+                    {new Date(record.assignedAt).toLocaleDateString()} - {record.unassignedAt ? new Date(record.unassignedAt).toLocaleDateString() : 'Present'}
+                  </span>
                 </div>
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500 mb-1">Relation</h4>
-                  <p className="text-slate-900">{profile.guardianDetails.guardianRelation}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500 mb-1 flex items-center gap-2">
-                    <Phone className="h-4 w-4" /> Phone
-                  </h4>
-                  <p className="text-slate-900">{profile.guardianDetails.guardianPhone}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500 mb-1 flex items-center gap-2">
-                    <MapPin className="h-4 w-4" /> Address
-                  </h4>
-                  <p className="text-slate-900">{profile.address?.permanentAddress}</p>
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 rounded-lg bg-indigo-50 p-2 text-indigo-600">
+                      <Building className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase">Hostel & Room</p>
+                      <p className="text-sm font-semibold text-slate-900">{record.hostelName} - {record.blockName}</p>
+                      <p className="text-sm text-slate-600">Room {record.roomNumber}, Bed {record.bedNumber}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 rounded-lg bg-emerald-50 p-2 text-emerald-600">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase">Warden In-charge</p>
+                      <p className="text-sm font-semibold text-slate-900">{record.wardenName || 'N/A'}</p>
+                      <p className="text-sm text-slate-600">{record.wardenContact || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 rounded-lg bg-amber-50 p-2 text-amber-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase">Status</p>
+                      <p className="text-sm font-semibold text-slate-900">{record.unassignedAt ? 'Completed' : 'Active'}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -8,7 +8,7 @@ import Floor from '../models/Floor';
 import Room from '../models/Room';
 import Bed, { BedStatus } from '../models/Bed';
 import Student from '../models/Student';
-import Complaint, { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '../models/Complaint';
+import Complaint, { ComplaintCategory, ComplaintStatus, ComplaintUrgency } from '../models/Complaint';
 import LeaveRequest, { LeaveStatus } from '../models/LeaveRequest';
 import HostelFee, { FeeStatus } from '../models/HostelFee';
 import Alert from '../models/Alert';

@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
 import ChangePasswordModal from './ChangePasswordModal';
 import api from '../api/axios';
+import { UserAvatar } from './UserAvatar';
 
 interface TopbarProps {
   toggleSidebar: () => void;
@@ -23,10 +24,14 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
     try {
       if (user) {
         const res = await api.get('/alerts');
-        setAlerts(res.data);
+        // If response body is { data: [...] }, use res.data.data
+        // Otherwise fallback to res.data
+        const alertsData = res.data?.data || res.data;
+        setAlerts(Array.isArray(alertsData) ? alertsData : []);
       }
     } catch (error) {
       console.error('Failed to fetch alerts', error);
+      setAlerts([]);
     }
   };
 
@@ -58,7 +63,7 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
   const handleMarkAsRead = async (id: string) => {
     try {
       await api.put(`/alerts/${id}/read`);
-      setAlerts(alerts.map(a => a._id === id ? { ...a, isRead: true } : a));
+      setAlerts(safeAlerts.map(a => a._id === id ? { ...a, isRead: true } : a));
     } catch (error) {
       console.error('Failed to mark alert as read', error);
     }
@@ -67,13 +72,14 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
   const handleMarkAllAsRead = async () => {
     try {
       await api.put('/alerts/read-all');
-      setAlerts(alerts.map(a => ({ ...a, isRead: true })));
+      setAlerts(safeAlerts.map(a => ({ ...a, isRead: true })));
     } catch (error) {
       console.error('Failed to mark all alerts as read', error);
     }
   };
 
-  const unreadCount = alerts.filter(a => !a.isRead).length;
+  const safeAlerts = Array.isArray(alerts) ? alerts : [];
+  const unreadCount = safeAlerts.filter(a => !a.isRead).length;
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -134,8 +140,8 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
                 )}
               </div>
               <div className="max-h-64 overflow-y-auto">
-                {alerts.length > 0 ? (
-                  alerts.map(alert => (
+                {safeAlerts.length > 0 ? (
+                  safeAlerts.map(alert => (
                     <div 
                       key={alert._id} 
                       className={`px-4 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 cursor-pointer ${!alert.isRead ? 'bg-slate-50/50' : ''}`}
@@ -179,9 +185,7 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-3 focus:outline-none"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-              <User className="h-5 w-5" />
-            </div>
+            <UserAvatar imageUrl={user?.profilePicture} name={user?.name || 'User'} className="h-8 w-8" />
             <div className="hidden md:block text-left text-sm">
               <p className="font-medium text-slate-700">{user?.name || 'User'}</p>
               <p className="text-xs text-slate-500">

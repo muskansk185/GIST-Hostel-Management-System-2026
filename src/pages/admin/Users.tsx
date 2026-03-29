@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, CheckCircle, XCircle, Loader2, Search, Filter, Plus, X, Eye, Edit2, User as UserIcon } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Loader2, Search, Filter, Plus, X, Eye, Edit2, User as UserIcon, History } from 'lucide-react';
 import { UserRole } from '../../context/AuthContext';
 import api from '../../api/axios';
+import { UserAvatar } from '../../components/UserAvatar';
+
+interface AccommodationHistory {
+  _id: string;
+  academicYear: string;
+  blockName: string;
+  roomNumber: string;
+  wardenName: string;
+  wardenContact: string;
+  assignedAt: string;
+  unassignedAt?: string;
+}
 
 interface User {
   _id: string;
@@ -14,6 +26,7 @@ interface User {
   hostelId?: string;
   department?: string;
   studentIds?: string[];
+  profilePicture?: string;
 }
 
 interface Student {
@@ -58,6 +71,9 @@ const Users: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [studentHistory, setStudentHistory] = useState<AccommodationHistory[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [hostels, setHostels] = useState<any[]>([]);
@@ -224,6 +240,36 @@ const Users: React.FC = () => {
       } catch (err) {
         console.error('Failed to fetch student details', err);
       }
+    }
+  };
+
+  const openHistoryModal = async (user: User) => {
+    setSelectedUser(user);
+    setShowHistoryModal(true);
+    setHistoryLoading(true);
+    setStudentHistory([]);
+    
+    try {
+      let studentId = user.studentIds && user.studentIds.length > 0 ? user.studentIds[0] : null;
+      
+      if (!studentId) {
+        const studentRes = await api.get(`/students?userId=${user._id}`);
+        if (studentRes.data && studentRes.data.length > 0) {
+          studentId = studentRes.data[0]._id;
+        }
+      }
+
+      if (studentId) {
+        const response = await api.get(`/accommodation/history/${studentId}`);
+        setStudentHistory(response.data);
+      } else {
+        setNotification({ type: 'error', message: 'Student record not found' });
+      }
+    } catch (err) {
+      console.error('Failed to fetch student history', err);
+      setNotification({ type: 'error', message: 'Failed to fetch accommodation history' });
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -639,7 +685,10 @@ const Users: React.FC = () => {
               {users.map((user) => (
                 <tr key={user?._id} className="hover:bg-slate-50">
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-slate-900">{user?.name || 'Unknown'}</div>
+                    <div className="flex items-center">
+                      <UserAvatar imageUrl={user?.profilePicture} name={user?.name || 'User'} className="h-8 w-8 mr-3" />
+                      <div className="text-sm font-medium text-slate-900">{user?.name || 'Unknown'}</div>
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="text-sm text-slate-500">{user?.email || 'No email'}</div>
@@ -680,6 +729,16 @@ const Users: React.FC = () => {
                     >
                       <Eye className="h-4 w-4" />
                     </button>
+                    {user.role === UserRole.STUDENT && (
+                      <button
+                        onClick={() => openHistoryModal(user)}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                        title="View History"
+                      >
+                        <History className="h-4 w-4" />
+                        History
+                      </button>
+                    )}
                     <button
                       onClick={() => openEditModal(user)}
                       className="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-600 shadow-sm hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
@@ -873,8 +932,17 @@ const Users: React.FC = () => {
             </div>
             <div className="p-6 space-y-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
-                  <UserIcon className="w-8 h-8" />
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 overflow-hidden">
+                  {selectedUser?.profilePicture ? (
+                    <img 
+                      // @ts-ignore
+                      src={selectedUser.profilePicture.startsWith('http') ? selectedUser.profilePicture : `${import.meta.env.VITE_API_URL || ''}${selectedUser.profilePicture}`} 
+                      alt={selectedUser.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon className="w-8 h-8" />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">{selectedUser?.name || 'Unknown'}</h3>
@@ -978,6 +1046,89 @@ const Users: React.FC = () => {
                 <button
                   onClick={() => setShowViewModal(false)}
                   className="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* History Modal */}
+      {showHistoryModal && selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/50 p-4">
+          <div className="relative w-full max-w-4xl rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <h2 className="text-xl font-bold text-slate-900">
+                Accommodation History - {selectedUser.name}
+              </h2>
+              <button 
+                onClick={() => setShowHistoryModal(false)} 
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              {historyLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                </div>
+              ) : studentHistory.length > 0 ? (
+                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                          Academic Year
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                          Block
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                          Room
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                          Warden Name
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                          Warden Contact
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 bg-white">
+                      {studentHistory.map((history) => (
+                        <tr key={history._id} className="hover:bg-slate-50">
+                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
+                            {history.academicYear}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                            {history.blockName}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                            {history.roomNumber}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                            {history.wardenName}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                            {history.wardenContact}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  <History className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>No accommodation history found for this student.</p>
+                </div>
+              )}
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowHistoryModal(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
                 >
                   Close
                 </button>

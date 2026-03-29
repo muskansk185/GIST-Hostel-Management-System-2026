@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ items, isCollapsed }) => {
       
       <div className="flex-1 overflow-y-auto py-6 flex flex-col gap-1 px-3">
         <nav className="space-y-1">
-          {items.map((item) => {
+          {(Array.isArray(items) ? items : []).map((item) => {
             const isActive = isItemActive(item);
             const isOpen = openDropdowns[item.label];
 
@@ -71,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ items, isCollapsed }) => {
                   
                   {!isCollapsed && isOpen && (
                     <div className="pl-10 space-y-1">
-                      {item.children.map(child => (
+                      {(Array.isArray(item.children) ? item.children : []).map(child => (
                         <NavLink
                           key={child.path}
                           to={child.path!}

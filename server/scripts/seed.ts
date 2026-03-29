@@ -10,7 +10,7 @@ import Bed, { BedStatus } from '../models/Bed';
 import Student from '../models/Student';
 import Key, { KeyStatus } from '../models/Key';
 import HostelFee, { FeeStatus } from '../models/HostelFee';
-import Complaint, { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '../models/Complaint';
+import Complaint, { ComplaintCategory, ComplaintStatus, ComplaintUrgency } from '../models/Complaint';
 import LeaveRequest, { LeaveStatus } from '../models/LeaveRequest';
 
 dotenv.config();
@@ -304,8 +304,8 @@ const seedDatabase = async () => {
           bedId: s.bed._id,
           category: ComplaintCategory.ELECTRICAL,
           description: 'Fan is not working properly.',
-          status: ComplaintStatus.OPEN,
-          priority: ComplaintPriority.MEDIUM
+          status: ComplaintStatus.PENDING,
+          urgency: ComplaintUrgency.MEDIUM
         });
       } else {
         await Complaint.create({
@@ -315,7 +315,7 @@ const seedDatabase = async () => {
           category: ComplaintCategory.PLUMBING,
           description: 'Tap is leaking in the washroom.',
           status: ComplaintStatus.RESOLVED,
-          priority: ComplaintPriority.LOW,
+          urgency: ComplaintUrgency.LOW,
           resolvedAt: new Date()
         });
       }
