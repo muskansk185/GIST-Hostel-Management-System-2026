@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import api from '../../api/axios';
 import { Users, Search, AlertCircle, Building, MapPin, Phone, Mail, Eye } from 'lucide-react';
 import StudentDetailModal from '../../components/StudentDetailModal';
+import { UserAvatar } from '../../components/UserAvatar';
 
 const WardenStudents: React.FC = () => {
   const { user } = useAuth();
@@ -157,13 +158,11 @@ const WardenStudents: React.FC = () => {
                   <tr key={student._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold overflow-hidden">
-                          {student.profilePicture ? (
-                            <img src={student.profilePicture} alt={`${student.personalDetails?.firstName} ${student.personalDetails?.lastName}`} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                          ) : (
-                            `${student.personalDetails?.firstName?.charAt(0)}${student.personalDetails?.lastName?.charAt(0)}`
-                          )}
-                        </div>
+                        <UserAvatar 
+                          imageUrl={student.profilePicture} 
+                          name={`${student.personalDetails?.firstName} ${student.personalDetails?.lastName}`} 
+                          className="h-10 w-10" 
+                        />
                         <div className="ml-4">
                           <div className="text-sm font-medium text-slate-900">
                             {student.personalDetails?.firstName} {student.personalDetails?.lastName}

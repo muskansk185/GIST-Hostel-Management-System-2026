@@ -148,40 +148,69 @@ export const getRevenue = async (req: AuthRequest, res: Response) => {
       {
         $group: {
           _id: {
-            year: { $year: "$paidAt" },
-            month: { $month: "$paidAt" }
+            $dateToString: { format: "%Y-%m", date: "$paidAt" }
           },
           totalAmount: { $sum: "$amount" }
         }
       },
       {
         $sort: {
-          "_id.year": 1,
-          "_id.month": 1
+          "_id": 1
         }
       }
     ]);
 
     // Format for the frontend chart
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    // const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     
-    // Create an array of the last 6 months to ensure we have data points even if revenue is 0
-    const formattedData = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const year = d.getFullYear();
-      const month = d.getMonth() + 1; // 1-12
+    // // Create an array of the last 6 months to ensure we have data points even if revenue is 0
+    // const formattedData = [];
+    // for (let i = 5; i >= 0; i--) {
+    //   const d = new Date();
+    //   d.setMonth(d.getMonth() - i);
+    //   const year = d.getFullYear();
+    //   const month = d.getMonth() + 1; // 1-12
+    //   const monthStr = month < 10 ? `0${month}` : `${month}`;
+    //   const dateStr = `${year}-${monthStr}`;
       
-      const found = revenue.find(r => r._id.year === year && r._id.month === month);
+    //   const found = revenue.find(r => r._id === dateStr);
       
-      formattedData.push({
-        month: `${monthNames[month - 1]} ${year.toString().substring(2)}`,
-        amount: found ? found.totalAmount : 0
-      });
-    }
+    //   formattedData.push({
+    //     month: `${monthNames[month - 1]} ${year}`,
+    //     amount: found ? found.totalAmount : 0
+    //   });
+    // }
 
-    res.status(200).json(formattedData);
+    // res.status(200).json(formattedData);
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// ✅ Create lookup map (O(1) access)
+const revenueMap = new Map();
+revenue.forEach(r => {
+  revenueMap.set(r._id, r.totalAmount);
+});
+
+const formattedData = [];
+
+for (let i = 5; i >= 0; i--) {
+  // ✅ FIX: create fresh date each iteration
+  const d = new Date();
+  d.setDate(1); // prevent overflow issues
+  d.setMonth(d.getMonth() - i);
+
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+
+  const monthStr = month < 10 ? `0${month}` : `${month}`;
+  const dateStr = `${year}-${monthStr}`;
+
+  formattedData.push({
+    month: `${monthNames[month - 1]} ${year}`,
+    amount: revenueMap.get(dateStr) || 0
+  });
+}
+
+res.status(200).json(formattedData);
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

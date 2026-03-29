@@ -19,6 +19,17 @@ export interface IUser extends Document {
   department?: string;
   hostelId?: mongoose.Types.ObjectId;
   profilePicture?: string;
+  hostelHistory: {
+    hostel: mongoose.Types.ObjectId;
+    assignedFrom: Date;
+    assignedTo: Date | null;
+  }[];
+}
+
+export interface IHostelHistory {
+  hostel: mongoose.Types.ObjectId;
+  assignedFrom: Date;
+  assignedTo: Date | null;
 }
 
 const UserSchema: Schema = new Schema({
@@ -31,7 +42,12 @@ const UserSchema: Schema = new Schema({
   studentIds: [{ type: Schema.Types.ObjectId, ref: 'Student' }],
   department: { type: String },
   hostelId: { type: Schema.Types.ObjectId, ref: 'Hostel' },
-  profilePicture: { type: String }
+  profilePicture: { type: String },
+  hostelHistory: [{
+    hostel: { type: Schema.Types.ObjectId, ref: 'Hostel' },
+    assignedFrom: { type: Date, default: Date.now },
+    assignedTo: { type: Date, default: null }
+  }]
 }, { timestamps: true });
 
 export default mongoose.model<IUser>('User', UserSchema);

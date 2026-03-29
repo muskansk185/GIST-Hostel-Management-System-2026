@@ -27,6 +27,11 @@ interface User {
   department?: string;
   studentIds?: string[];
   profilePicture?: string;
+  hostelHistory?: {
+    hostel: { _id: string; name: string };
+    assignedFrom: string;
+    assignedTo: string | null;
+  }[];
 }
 
 interface Student {
@@ -249,27 +254,44 @@ const Users: React.FC = () => {
     setHistoryLoading(true);
     setStudentHistory([]);
     
-    try {
-      let studentId = user.studentIds && user.studentIds.length > 0 ? user.studentIds[0] : null;
-      
-      if (!studentId) {
-        const studentRes = await api.get(`/students?userId=${user._id}`);
-        if (studentRes.data && studentRes.data.length > 0) {
-          studentId = studentRes.data[0]._id;
-        }
+    if (user.role === UserRole.WARDEN) {
+      if (!user.hostelHistory || user.hostelHistory.length === 0) {
+        console.log('Warden has no hostel history:', user);
       }
-
-      if (studentId) {
-        const response = await api.get(`/accommodation/history/${studentId}`);
-        setStudentHistory(response.data);
-      } else {
-        setNotification({ type: 'error', message: 'Student record not found' });
-      }
-    } catch (err) {
-      console.error('Failed to fetch student history', err);
-      setNotification({ type: 'error', message: 'Failed to fetch accommodation history' });
-    } finally {
+      setStudentHistory(user.hostelHistory?.map(h => ({
+        _id: h.hostel._id,
+        academicYear: `${new Date(h.assignedFrom).getFullYear()} - ${h.assignedTo ? new Date(h.assignedTo).getFullYear() : 'Present'}`,
+        blockName: h.hostel.name,
+        roomNumber: 'N/A',
+        wardenName: user.name,
+        wardenContact: user.phone || 'N/A',
+        assignedAt: h.assignedFrom,
+        unassignedAt: h.assignedTo || undefined
+      })).sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime()) || []);
       setHistoryLoading(false);
+    } else {
+      try {
+        let studentId = user.studentIds && user.studentIds.length > 0 ? user.studentIds[0] : null;
+        
+        if (!studentId) {
+          const studentRes = await api.get(`/students?userId=${user._id}`);
+          if (studentRes.data && studentRes.data.length > 0) {
+            studentId = studentRes.data[0]._id;
+          }
+        }
+
+        if (studentId) {
+          const response = await api.get(`/accommodation/history/${studentId}`);
+          setStudentHistory(response.data.sort((a: AccommodationHistory, b: AccommodationHistory) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime()));
+        } else {
+          setNotification({ type: 'error', message: 'Student record not found' });
+        }
+      } catch (err) {
+        console.error('Failed to fetch student history', err);
+        setNotification({ type: 'error', message: 'Failed to fetch accommodation history' });
+      } finally {
+        setHistoryLoading(false);
+      }
     }
   };
 
@@ -729,7 +751,7 @@ const Users: React.FC = () => {
                     >
                       <Eye className="h-4 w-4" />
                     </button>
-                    {user.role === UserRole.STUDENT && (
+                    {(user.role === UserRole.STUDENT || user.role === UserRole.WARDEN) && (
                       <button
                         onClick={() => openHistoryModal(user)}
                         className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
@@ -932,18 +954,11 @@ const Users: React.FC = () => {
             </div>
             <div className="p-6 space-y-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 overflow-hidden">
-                  {selectedUser?.profilePicture ? (
-                    <img 
-                      // @ts-ignore
-                      src={selectedUser.profilePicture.startsWith('http') ? selectedUser.profilePicture : `${import.meta.env.VITE_API_URL || ''}${selectedUser.profilePicture}`} 
-                      alt={selectedUser.name} 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <UserIcon className="w-8 h-8" />
-                  )}
-                </div>
+                <UserAvatar
+                  imageUrl={selectedUser?.profilePicture}
+                  name={selectedUser?.name || "User"}
+                  className="h-16 w-16"
+                />
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">{selectedUser?.name || 'Unknown'}</h3>
                   <p className="text-sm text-slate-500">{selectedUser?.email || 'No email'}</p>
@@ -1060,7 +1075,7 @@ const Users: React.FC = () => {
           <div className="relative w-full max-w-4xl rounded-xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <h2 className="text-xl font-bold text-slate-900">
-                Accommodation History - {selectedUser.name}
+                {selectedUser.role === UserRole.WARDEN ? 'Warden Hostel History' : 'Accommodation History'} - {selectedUser.name}
               </h2>
               <button 
                 onClick={() => setShowHistoryModal(false)} 
@@ -1122,7 +1137,7 @@ const Users: React.FC = () => {
               ) : (
                 <div className="text-center py-8 text-slate-500">
                   <History className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p>No accommodation history found for this student.</p>
+                  <p>No history found.</p>
                 </div>
               )}
               <div className="mt-6 flex justify-end">

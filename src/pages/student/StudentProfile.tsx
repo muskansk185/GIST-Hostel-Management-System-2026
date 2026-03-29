@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api/axios';
 import { Camera, User, Phone, Mail, MapPin, BookOpen, AlertCircle, CheckCircle2, History, Building, Calendar } from 'lucide-react';
+import { UserAvatar } from '../../components/UserAvatar';
 
 const StudentProfile: React.FC = () => {
   const { user } = useAuth();
@@ -173,16 +174,11 @@ const StudentProfile: React.FC = () => {
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative group">
                   <div className="h-32 w-32 rounded-full overflow-hidden ring-4 ring-white shadow-lg bg-slate-100 flex items-center justify-center">
-                    {profile?.profilePicture ? (
-                      <img 
-                        src={profile.profilePicture} 
-                        alt="Profile" 
-                        className="h-full w-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <User className="h-16 w-16 text-slate-400" />
-                    )}
+                    <UserAvatar 
+                      imageUrl={profile?.profilePicture} 
+                      name={`${profile?.personalDetails?.firstName} ${profile?.personalDetails?.lastName}`} 
+                      className="h-full w-full" 
+                    />
                   </div>
                   
                   <button

@@ -122,15 +122,37 @@ export const updateUser = async (req: Request, res: Response) => {
       updateData.studentIds = [updateData.studentIds];
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: false }
-    ).select('-password');
-
-    if (!updatedUser) {
+    const user = await User.findById(id);
+    if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    // Handle hostel history tracking if hostelId is being updated
+    if (updateData.hostelId !== undefined && updateData.hostelId !== user.hostelId?.toString()) {
+      // Close previous assignment
+      if (user.hostelId) {
+        const activeAssignment = user.hostelHistory.find((h: any) => h.assignedTo === null && h.hostel?.toString() === user.hostelId?.toString());
+        if (activeAssignment) {
+          activeAssignment.assignedTo = new Date();
+        }
+      }
+
+      // Add new assignment
+      if (updateData.hostelId) {
+        user.hostelHistory.push({
+          hostel: updateData.hostelId,
+          assignedFrom: new Date(),
+          assignedTo: null
+        });
+      }
+      user.hostelId = updateData.hostelId;
+    }
+
+    // Update other fields
+    Object.assign(user, updateData);
+    await user.save();
+    
+    const updatedUser = await User.findById(id).select('-password');
 
     // Update role-specific details if role is STUDENT
     if (updatedUser.role === 'STUDENT') {
@@ -196,28 +218,66 @@ export const getUsers = async (req: Request, res: Response) => {
   try {
     const { role, status, search, studentId } = req.query;
     
-    const query: any = {};
+    const match: any = {};
     
     if (role && role !== 'All') {
-      query.role = role;
+      match.role = role;
     }
 
     if (studentId) {
-      query.studentIds = studentId;
+      match.studentIds = studentId;
     }
     
     if (status && status !== 'All') {
-      query.isActive = status === 'Active';
+      match.isActive = status === 'Active';
     }
     
     if (search) {
-      query.$or = [
+      match.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } }
       ];
     }
 
-    const users = await User.find(query).select('id name email role isActive createdAt studentIds phone hostelId department profilePicture');
+    const users = await User.aggregate([
+      { $match: match },
+      {
+        $lookup: {
+          from: 'students',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'studentDetails'
+        }
+      },
+      {
+        $addFields: {
+          profilePicture: {
+            $cond: {
+              if: { $gt: [{ $size: '$studentDetails' }, 0] },
+              then: { $arrayElemAt: ['$studentDetails.profilePicture', 0] },
+              else: '$profilePicture'
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          role: 1,
+          isActive: 1,
+          createdAt: 1,
+          studentIds: 1,
+          phone: 1,
+          hostelId: 1,
+          department: 1,
+          profilePicture: 1,
+          hostelHistory: 1
+        }
+      }
+    ]);
+    
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });

@@ -271,6 +271,7 @@ const AdminDashboard: React.FC = () => {
                   <Bar dataKey="amount" fill="#4f46e5" radius={[4, 4, 0, 0]} maxBarSize={40} />
                 </BarChart>
               </ResponsiveContainer>
+              
             ) : (
               <div className="flex h-full items-center justify-center text-slate-500">No revenue data available</div>
             )}

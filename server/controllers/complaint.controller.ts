@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import Complaint, { ComplaintStatus, ComplaintUrgency, ComplaintCategory } from '../models/Complaint';
 import Student from '../models/Student';
@@ -45,7 +46,9 @@ export const createComplaint = async (req: Request, res: Response) => {
       title,
       description,
       urgency,
-      expectedResolutionTime
+      expectedResolutionTime,
+      currentStatus: 'raised',
+      statusHistory: [{ status: 'raised', updatedAt: new Date(), updatedBy: student.userId, note: 'Complaint raised' }]
     });
 
     await complaint.save();
@@ -196,10 +199,11 @@ export const getAllComplaints = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const updateComplaintStatus = async (req: Request, res: Response) => {
+export const updateComplaintStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { complaintId } = req.params;
-    const { status } = req.body;
+    const { status, note } = req.body;
+    const updatedBy = req.user?.userId;
 
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
@@ -208,6 +212,9 @@ export const updateComplaintStatus = async (req: Request, res: Response) => {
     }
 
     complaint.status = status;
+    complaint.currentStatus = status;
+    complaint.statusHistory.push({ status, updatedAt: new Date(), updatedBy: new mongoose.Types.ObjectId(updatedBy), note });
+    
     if (status === ComplaintStatus.RESOLVED) {
       complaint.resolvedAt = new Date();
     } else {

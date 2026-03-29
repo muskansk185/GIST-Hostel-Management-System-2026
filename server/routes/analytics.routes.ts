@@ -8,7 +8,8 @@ import {
   getComplaintAnalytics,
   getFeeAnalytics,
   getLeaveAnalytics,
-  getStudentDistribution
+  getStudentDistribution,
+  getCommonComplaintCategories
 } from '../controllers/analytics.controller';
 import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware';
 import { UserRole } from '../models/User';
@@ -23,6 +24,7 @@ router.get('/stats', getSystemStats);
 router.get('/occupancy', getOccupancyStats);
 router.get('/revenue', getRevenueStats);
 router.get('/complaints', getComplaintStats);
+router.get('/complaints/common', getCommonComplaintCategories);
 
 // Old routes (used by AdminDashboard and WardenDashboard)
 router.get('/dashboard/occupancy', getOccupancyAnalytics);

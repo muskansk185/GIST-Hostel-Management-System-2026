@@ -524,7 +524,15 @@ export const getCommonComplaintCategories = async (req: AuthRequest, res: Respon
           count: { $sum: 1 }
         }
       },
-      { $sort: { count: -1 } }
+      { $sort: { count: -1 } },
+      { $limit: 3 },
+      {
+        $project: {
+          _id: 0,
+          category: '$_id',
+          count: 1
+        }
+      }
     ]);
 
     res.status(200).json(commonCategories);

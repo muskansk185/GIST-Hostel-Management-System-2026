@@ -21,6 +21,13 @@ export enum ComplaintUrgency {
   HIGH = 'high'
 }
 
+export interface IStatusHistory {
+  status: string;
+  updatedAt: Date;
+  updatedBy: mongoose.Types.ObjectId;
+  note?: string;
+}
+
 export interface IComplaint extends Document {
   studentId: mongoose.Types.ObjectId;
   roomId: mongoose.Types.ObjectId;
@@ -29,6 +36,8 @@ export interface IComplaint extends Document {
   title: string;
   description: string;
   status: ComplaintStatus;
+  currentStatus: string;
+  statusHistory: IStatusHistory[];
   urgency: ComplaintUrgency;
   expectedResolutionTime: Date;
   assignedTo?: mongoose.Types.ObjectId;
@@ -46,6 +55,13 @@ const ComplaintSchema: Schema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   status: { type: String, enum: Object.values(ComplaintStatus), default: ComplaintStatus.PENDING },
+  currentStatus: { type: String, default: 'raised' },
+  statusHistory: [{
+    status: { type: String, required: true },
+    updatedAt: { type: Date, default: Date.now },
+    updatedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    note: { type: String }
+  }],
   urgency: { type: String, enum: Object.values(ComplaintUrgency), default: ComplaintUrgency.LOW },
   expectedResolutionTime: { type: Date },
   assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
