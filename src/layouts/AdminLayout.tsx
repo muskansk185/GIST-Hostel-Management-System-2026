@@ -1,11 +1,12 @@
 import React from 'react';
 import DashboardLayout from './DashboardLayout';
-import { LayoutDashboard, Users, Home, BarChart, Building, Layers, DoorOpen, BedDouble, Map, Settings, DollarSign, History, Calendar, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, Home, BarChart, Building, Layers, DoorOpen, BedDouble, Map, Settings, DollarSign, History, Calendar, CreditCard, AlertTriangle } from 'lucide-react';
 
 const AdminLayout: React.FC = () => {
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { label: 'Analytics', path: '/admin/analytics', icon: <BarChart size={20} /> },
+    { label: 'Complaints Analytics', path: '/admin/complaints-analytics', icon: <AlertTriangle size={20} /> },
     { label: 'Fee Management', path: '/admin/fees', icon: <DollarSign size={20} /> },
     { label: 'Hostel Explorer', path: '/admin/hostel-explorer', icon: <Map size={20} /> },
     {

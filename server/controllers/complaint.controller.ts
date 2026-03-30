@@ -6,6 +6,131 @@ import Student from '../models/Student';
 import Alert from '../models/Alert';
 import User, { UserRole } from '../models/User';
 
+export const getComplaintAnalytics = async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+    const totalComplaints = await Complaint.countDocuments();
+    const overdueComplaints = await Complaint.countDocuments({
+      status: { $ne: ComplaintStatus.RESOLVED },
+      createdAt: { $lt: fortyEightHoursAgo }
+    });
+
+    const resolvedComplaints = await Complaint.find({ status: ComplaintStatus.RESOLVED, resolvedAt: { $exists: true } });
+    let totalResolutionTime = 0;
+    resolvedComplaints.forEach(c => {
+      if (c.resolvedAt) {
+        totalResolutionTime += (c.resolvedAt.getTime() - c.createdAt.getTime());
+      }
+    });
+    const avgResolutionTimeHours = resolvedComplaints.length > 0 
+      ? (totalResolutionTime / resolvedComplaints.length) / (1000 * 60 * 60) 
+      : 0;
+
+    const categoryCounts = await Complaint.aggregate([
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    const blockStats = await Complaint.aggregate([
+      {
+        $lookup: {
+          from: 'students',
+          localField: 'studentId',
+          foreignField: '_id',
+          as: 'student'
+        }
+      },
+      { $unwind: "$student" },
+      {
+        $lookup: {
+          from: 'blocks',
+          localField: 'student.blockId',
+          foreignField: '_id',
+          as: 'block'
+        }
+      },
+      { $unwind: "$block" },
+      {
+        $group: {
+          _id: "$block.name",
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    const repeatedIssues = await Complaint.aggregate([
+      {
+        $lookup: {
+          from: 'students',
+          localField: 'studentId',
+          foreignField: '_id',
+          as: 'student'
+        }
+      },
+      { $unwind: "$student" },
+      {
+        $lookup: {
+          from: 'blocks',
+          localField: 'student.blockId',
+          foreignField: '_id',
+          as: 'block'
+        }
+      },
+      { $unwind: "$block" },
+      {
+        $group: {
+          _id: { blockName: "$block.name", category: "$category" },
+          count: { $sum: 1 },
+          complaints: { $push: { title: "$title", status: "$status", createdAt: "$createdAt" } }
+        }
+      },
+      { $match: { count: { $gt: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
+
+    const insights: string[] = [];
+    if (overdueComplaints > 0) {
+      insights.push(`${overdueComplaints} complaints are overdue (unresolved for >48 hours). Immediate action required.`);
+    }
+    if (categoryCounts.length > 0) {
+      insights.push(`${categoryCounts[0]._id} is the most frequent complaint category with ${categoryCounts[0].count} issues.`);
+    }
+    repeatedIssues.forEach(issue => {
+      if (issue.count > 5) {
+        insights.push(`CRITICAL: ${issue._id.category} issues in ${issue._id.blockName} are recurring frequently (${issue.count} times).`);
+      } else if (issue.count > 2) {
+        insights.push(`Warning: ${issue._id.category} issues in ${issue._id.blockName} have been reported ${issue.count} times.`);
+      }
+    });
+
+    res.json({
+      summary: {
+        total: totalComplaints,
+        overdue: overdueComplaints,
+        avgResolutionTimeHours: Math.round(avgResolutionTimeHours * 10) / 10,
+        topCategory: categoryCounts.length > 0 ? categoryCounts[0]._id : 'N/A'
+      },
+      categoryDistribution: categoryCounts.map(c => ({ name: c._id, value: c.count })),
+      blockDistribution: blockStats.map(b => ({ name: b._id, value: b.count })),
+      repeatedIssues: repeatedIssues.map(r => ({
+        block: r._id.blockName,
+        category: r._id.category,
+        count: r.count,
+        recentComplaints: r.complaints.slice(0, 3)
+      })),
+      insights
+    });
+
+  } catch (error: any) {
+    console.error('Analytics Error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Student APIs
 export const createComplaint = async (req: Request, res: Response) => {
   try {

@@ -33,6 +33,7 @@ import HostelExplorer from './pages/admin/HostelExplorer';
 import Users from './pages/admin/Users';
 import SystemSettings from './pages/admin/SystemSettings';
 import FeeManagement from './pages/admin/FeeManagement';
+import ComplaintsAnalytics from './pages/admin/ComplaintsAnalytics';
 import WardenDashboard from './pages/warden/WardenDashboard';
 import WardenAnalytics from './pages/warden/HostelAnalytics';
 import WardenRooms from './pages/warden/Rooms';
@@ -79,6 +80,7 @@ const AppRoutes = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="complaints-analytics" element={<ComplaintsAnalytics />} />
             <Route path="hostel-explorer" element={<HostelExplorer />} />
             <Route path="hostels" element={<Hostels />} />
             <Route path="blocks" element={<Blocks />} />

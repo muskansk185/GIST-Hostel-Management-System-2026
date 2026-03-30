@@ -8,7 +8,8 @@ import {
   updateComplaintPriority,
   assignStaff,
   assignWarden,
-  getRoomComplaints
+  getRoomComplaints,
+  getComplaintAnalytics
 } from '../controllers/complaint.controller';
 import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware';
 import { validateRequest } from '../middlewares/validate.middleware';
@@ -22,6 +23,9 @@ import {
 import { UserRole } from '../models/User';
 
 const router = Router();
+
+// Analytics API (Must be before /:complaintId routes)
+router.get('/analytics', authenticateJWT, authorizeRoles(UserRole.SUPER_ADMIN), getComplaintAnalytics);
 
 // Student APIs
 router.post('/create', authenticateJWT, authorizeRoles(UserRole.STUDENT), validateRequest(createComplaintSchema), createComplaint);
